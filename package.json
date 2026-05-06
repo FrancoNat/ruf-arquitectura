@@ -3,13 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=20.9.0"
+    "node": "20.x"
   },
   "scripts": {
-    "dev": "$HOME/.nvm/versions/node/v20.20.0/bin/node node_modules/next/dist/bin/next dev --webpack",
-    "build": "$HOME/.nvm/versions/node/v20.20.0/bin/node node_modules/next/dist/bin/next build --webpack",
-    "start": "$HOME/.nvm/versions/node/v20.20.0/bin/node node_modules/next/dist/bin/next start",
-    "lint": "$HOME/.nvm/versions/node/v20.20.0/bin/node node_modules/eslint/bin/eslint.js"
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
+    "start": "next start",
+    "lint": "eslint"
   },
   "dependencies": {
     "@fancyapps/ui": "^6.1.14",
