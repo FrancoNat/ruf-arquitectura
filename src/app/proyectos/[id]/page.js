@@ -1,0 +1,89 @@
+"use client";
+
+import "@fancyapps/ui/dist/fancybox/fancybox.css";
+import Image from "next/image";
+import Navbar from "../../../components/Navbar";
+import { Fancybox } from "@fancyapps/ui";
+import { use, useEffect } from "react";
+import { proyectos } from "@/data/proyectos";
+import { notFound } from "next/navigation";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation, Pagination, Autoplay } from "swiper/modules";
+
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
+
+export default function ProyectoDetalle({ params }) {
+  const { id } = use(params);
+  const proyecto = proyectos.find((p) => p.id === id);
+
+  useEffect(() => {
+    Fancybox.bind("[data-fancybox]", {});
+
+    return () => {
+      Fancybox.unbind("[data-fancybox]");
+      Fancybox.close();
+    };
+  }, []);
+
+  if (!proyecto) return notFound();
+
+  return (
+    <>
+      <Navbar alwaysVisible />
+
+      <main className="bg-background pb-16 pt-36 sm:pb-20 sm:pt-32">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6">
+          <h1 className="mb-6 text-3xl text-primary sm:text-4xl">
+            {proyecto.titulo}
+          </h1>
+
+          <Swiper
+            modules={[Navigation, Pagination, Autoplay]}
+            navigation
+            pagination={{ clickable: true }}
+            autoplay={{ delay: 3000 }}
+            loop
+            className="mb-10"
+          >
+            {proyecto.imagenes.map((img, index) => (
+              <SwiperSlide key={index}>
+                <div className="overflow-hidden rounded-lg">
+                  <a
+                    href={img}
+                    data-fancybox="gallery"
+                    className="relative block h-[280px] sm:h-[420px] lg:h-[500px]"
+                  >
+                    <Image
+                      src={img}
+                      alt={
+                        index === 0
+                          ? proyecto.alt
+                          : `${proyecto.titulo} desarrollado por rüf arquitectura`
+                      }
+                      fill
+                      sizes="(max-width: 639px) 100vw, (max-width: 1279px) 80vw, 1200px"
+                      className="cursor-zoom-in object-cover transition duration-500 hover:scale-105"
+                    />
+                  </a>
+                </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+
+          <p className="text-text leading-relaxed mb-10">
+            {proyecto.descripcion}
+          </p>
+
+          <a
+            href="/agenda"
+            className="inline-block rounded-lg bg-primary px-6 py-3 text-white transition hover:opacity-80"
+          >
+            agendar reunión
+          </a>
+        </div>
+      </main>
+    </>
+  );
+}

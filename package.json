@@ -1,0 +1,28 @@
+{
+  "name": "ruf-arquitectura",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "dev": "$HOME/.nvm/versions/node/v20.20.0/bin/node node_modules/next/dist/bin/next dev --webpack",
+    "build": "$HOME/.nvm/versions/node/v20.20.0/bin/node node_modules/next/dist/bin/next build --webpack",
+    "start": "$HOME/.nvm/versions/node/v20.20.0/bin/node node_modules/next/dist/bin/next start",
+    "lint": "$HOME/.nvm/versions/node/v20.20.0/bin/node node_modules/eslint/bin/eslint.js"
+  },
+  "dependencies": {
+    "@fancyapps/ui": "^6.1.14",
+    "next": "16.2.4",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "swiper": "^12.1.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "babel-plugin-react-compiler": "1.0.0",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.4",
+    "tailwindcss": "^4"
+  }
+}
