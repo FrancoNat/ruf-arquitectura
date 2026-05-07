@@ -4,12 +4,30 @@ export default function HorariosDisponibles({
   fecha,
   horariosDisponibles,
   horaSeleccionada,
+  cargando,
+  error,
   onSeleccionarHora,
 }) {
   if (!fecha) {
     return (
       <div className="rounded-xl border border-dashed border-black/10 bg-background px-4 py-6 text-sm text-text/60">
         seleccioná una fecha para ver horarios disponibles
+      </div>
+    );
+  }
+
+  if (cargando) {
+    return (
+      <div className="rounded-xl border border-dashed border-black/10 bg-background px-4 py-6 text-sm text-text/60">
+        cargando horarios...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-xl border border-dashed border-black/10 bg-background px-4 py-6 text-sm text-text/60">
+        no pudimos cargar los horarios
       </div>
     );
   }

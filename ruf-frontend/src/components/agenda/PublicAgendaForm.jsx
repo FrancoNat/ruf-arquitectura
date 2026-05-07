@@ -1,31 +1,45 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { getHorariosDisponibles } from "@/data/agendaMock";
+import { useState } from "react";
+import {
+  crearReunion,
+  getHorariosDisponibles,
+} from "@/services/agenda";
 import HorariosDisponibles from "./HorariosDisponibles";
 
-export default function PublicAgendaForm({
-  reuniones,
-  bloqueos,
-  horariosBase,
-}) {
+export default function PublicAgendaForm() {
   const [form, setForm] = useState({
     nombre: "",
-    tipo: "",
+    tipoProyecto: "",
     fecha: "",
   });
   const [horaSeleccionada, setHoraSeleccionada] = useState("");
+  const [horariosDisponibles, setHorariosDisponibles] = useState([]);
+  const [cargandoHorarios, setCargandoHorarios] = useState(false);
+  const [errorHorarios, setErrorHorarios] = useState(false);
+  const [enviando, setEnviando] = useState(false);
 
-  const horariosDisponibles = useMemo(
-    () =>
-      getHorariosDisponibles(
-        form.fecha,
-        reuniones,
-        bloqueos,
-        horariosBase
-      ),
-    [form.fecha, reuniones, bloqueos, horariosBase]
-  );
+  const cargarHorarios = async (fecha) => {
+    if (!fecha) {
+      setHorariosDisponibles([]);
+      setErrorHorarios(false);
+      setCargandoHorarios(false);
+      return;
+    }
+
+    setCargandoHorarios(true);
+    setErrorHorarios(false);
+
+    try {
+      const horarios = await getHorariosDisponibles(fecha);
+      setHorariosDisponibles(horarios);
+    } catch {
+      setHorariosDisponibles([]);
+      setErrorHorarios(true);
+    } finally {
+      setCargandoHorarios(false);
+    }
+  };
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -37,32 +51,55 @@ export default function PublicAgendaForm({
 
     if (name === "fecha") {
       setHoraSeleccionada("");
+      cargarHorarios(value);
     }
   };
 
-  const enviarWhatsApp = () => {
-    if (!form.nombre || !form.tipo || !form.fecha || !horaSeleccionada) {
+  const enviarWhatsApp = async () => {
+    if (
+      !form.nombre ||
+      !form.tipoProyecto ||
+      !form.fecha ||
+      !horaSeleccionada
+    ) {
       alert("completá nombre, tipo, fecha y horario");
       return;
     }
 
-    const reunionSimulada = {
-      id: `tmp-${Date.now()}`,
-      nombre: form.nombre,
-      tipoProyecto: form.tipo,
-      fecha: form.fecha,
-      hora: horaSeleccionada,
-      estado: "pendiente",
-    };
+    setEnviando(true);
 
-    console.log("reunion simulada", reunionSimulada);
-    alert("reunión simulada lista para enviar");
+    try {
+      await crearReunion({
+        nombre: form.nombre,
+        tipoProyecto: form.tipoProyecto,
+        fecha: form.fecha,
+        hora: horaSeleccionada,
+      });
+    } catch (error) {
+      if (error.message === "error api: 409") {
+        alert("ese horario acaba de ocuparse, elegí otro");
+        setHoraSeleccionada("");
+        await cargarHorarios(form.fecha);
+        setEnviando(false);
+        return;
+      }
+
+      if (error.message === "error api: 400") {
+        alert("horario inválido");
+        setEnviando(false);
+        return;
+      }
+
+      alert("no pudimos agendar la reunión");
+      setEnviando(false);
+      return;
+    }
 
     const numero = "5491176619112";
     const texto = `hola, quiero agendar una reunión con rüf arquitectura.
 
 nombre: ${form.nombre}
-tipo de proyecto: ${form.tipo}
+tipo de proyecto: ${form.tipoProyecto}
 fecha: ${form.fecha}
 hora: ${horaSeleccionada}
 
@@ -70,6 +107,7 @@ hora: ${horaSeleccionada}
 
     const url = `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`;
     window.open(url, "_blank");
+    setEnviando(false);
   };
 
   return (
@@ -87,8 +125,8 @@ hora: ${horaSeleccionada}
         />
 
         <select
-          name="tipo"
-          value={form.tipo}
+          name="tipoProyecto"
+          value={form.tipoProyecto}
           onChange={handleChange}
           className="w-full rounded-lg border border-black/10 p-3"
         >
@@ -114,6 +152,8 @@ hora: ${horaSeleccionada}
             fecha={form.fecha}
             horariosDisponibles={horariosDisponibles}
             horaSeleccionada={horaSeleccionada}
+            cargando={cargandoHorarios}
+            error={errorHorarios}
             onSeleccionarHora={setHoraSeleccionada}
           />
         </div>
@@ -121,9 +161,10 @@ hora: ${horaSeleccionada}
         <button
           type="button"
           onClick={enviarWhatsApp}
+          disabled={enviando}
           className="w-full rounded-lg bg-primary py-3 text-white transition hover:opacity-90"
         >
-          agendar por whatsapp
+          {enviando ? "agendando..." : "agendar por whatsapp"}
         </button>
       </div>
     </div>
