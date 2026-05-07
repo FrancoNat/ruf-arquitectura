@@ -1,11 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import {
+  ADMIN_CATEGORIAS_STORAGE_KEY,
+  adminCategoriasIniciales,
+} from "@/data/adminCategorias";
 import ImageManager from "./ImageManager";
 
 const baseState = {
   titulo: "",
-  categoria: "casa",
+  categoria: adminCategoriasIniciales[0].id,
   descripcionCorta: "",
   descripcionLarga: "",
   ubicacion: "",
@@ -32,6 +36,36 @@ export default function ProyectoForm({
   );
 
   const [form, setForm] = useState(initialState);
+  const categorias = useMemo(() => {
+    if (typeof window === "undefined") {
+      return adminCategoriasIniciales;
+    }
+
+    const categoriasGuardadas = window.localStorage.getItem(
+      ADMIN_CATEGORIAS_STORAGE_KEY
+    );
+
+    if (!categoriasGuardadas) {
+      return adminCategoriasIniciales;
+    }
+
+    try {
+      const categoriasParseadas = JSON.parse(categoriasGuardadas);
+
+      if (Array.isArray(categoriasParseadas) && categoriasParseadas.length > 0) {
+        return categoriasParseadas;
+      }
+    } catch {
+      window.localStorage.removeItem(ADMIN_CATEGORIAS_STORAGE_KEY);
+    }
+
+    return adminCategoriasIniciales;
+  }, []);
+  const categoriaActual = categorias.some(
+    (categoria) => categoria.id === form.categoria
+  )
+    ? form.categoria
+    : categorias[0].id;
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -120,7 +154,7 @@ export default function ProyectoForm({
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    console.log(`${mode} proyecto`, form);
+    console.log(`${mode} proyecto`, { ...form, categoria: categoriaActual });
     alert("proyecto guardado");
   };
 
@@ -143,13 +177,15 @@ export default function ProyectoForm({
             <span>categoria</span>
             <select
               name="categoria"
-              value={form.categoria}
+              value={categoriaActual}
               onChange={handleChange}
               className="w-full rounded-xl border border-black/10 bg-background px-4 py-3 outline-none transition focus:border-primary"
             >
-              <option value="casa">casa</option>
-              <option value="interior">interior</option>
-              <option value="mueble">mueble</option>
+              {categorias.map((categoria) => (
+                <option key={categoria.id} value={categoria.id}>
+                  {categoria.nombre}
+                </option>
+              ))}
             </select>
           </label>
 

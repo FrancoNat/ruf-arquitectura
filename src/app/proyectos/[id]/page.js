@@ -5,6 +5,7 @@ import Image from "next/image";
 import Navbar from "../../../components/Navbar";
 import { Fancybox } from "@fancyapps/ui";
 import { use, useEffect } from "react";
+import Link from "next/link";
 import { proyectos } from "@/data/proyectos";
 import { notFound } from "next/navigation";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -76,12 +77,21 @@ export default function ProyectoDetalle({ params }) {
             {proyecto.descripcion}
           </p>
 
-          <a
-            href="/agenda"
-            className="inline-block rounded-lg bg-primary px-6 py-3 text-white transition hover:opacity-80"
-          >
-            agendar reunión
-          </a>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Link
+              href="/proyectos"
+              className="inline-flex rounded-lg border border-primary px-6 py-3 text-primary transition hover:bg-primary hover:text-white"
+            >
+              ver todos los proyectos
+            </Link>
+
+            <a
+              href="/agenda"
+              className="inline-flex rounded-lg bg-primary px-6 py-3 text-white transition hover:opacity-80"
+            >
+              agendar reunión
+            </a>
+          </div>
         </div>
       </main>
     </>

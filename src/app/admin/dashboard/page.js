@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import AdminCard from "@/components/admin/AdminCard";
+import CategoriaManager from "@/components/admin/CategoriaManager";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { adminProyectos } from "@/data/adminProyectos";
 import { adminTestimonios } from "@/data/adminTestimonios";
@@ -122,6 +123,8 @@ export default function AdminDashboardPage() {
           </Link>
         </AdminCard>
       </div>
+
+      <CategoriaManager />
     </AdminLayout>
   );
 }

@@ -47,20 +47,37 @@ export default function Proyectos() {
         >
           {proyectos.map((proyecto) => (
             <SwiperSlide key={proyecto.id}>
-              <Link
-                href={`/proyectos/${proyecto.id}`}
-                className="group block"
-              >
-                <div className="relative h-72 w-full overflow-hidden rounded-lg sm:h-80 md:h-64">
-                  <Image
-                    src={proyecto.imagen}
-                    alt={proyecto.alt}
-                    fill
-                    sizes="(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 33vw"
-                    className="object-cover transition duration-500 group-hover:scale-105"
-                  />
+              <article className="overflow-hidden rounded-xl border border-black/5 bg-white shadow-sm">
+                <Link href={`/proyectos/${proyecto.id}`} className="group block">
+                  <div className="relative h-72 w-full overflow-hidden sm:h-80 md:h-64">
+                    <Image
+                      src={proyecto.imagen}
+                      alt={proyecto.alt}
+                      fill
+                      sizes="(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 33vw"
+                      className="object-cover transition duration-500 group-hover:scale-105"
+                    />
+                  </div>
+                </Link>
+
+                <div className="space-y-4 p-5">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.18em] text-primary/60">
+                      {proyecto.categoria}
+                    </p>
+                    <h3 className="mt-2 text-lg text-primary">
+                      {proyecto.titulo}
+                    </h3>
+                  </div>
+
+                  <Link
+                    href="/proyectos"
+                    className="inline-flex rounded-lg border border-primary px-4 py-2 text-sm text-primary transition hover:bg-primary hover:text-white"
+                  >
+                    ver todos los proyectos
+                  </Link>
                 </div>
-              </Link>
+              </article>
             </SwiperSlide>
           ))}
         </Swiper>
