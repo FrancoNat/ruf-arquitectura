@@ -1,0 +1,15 @@
+{
+  "folders": [
+    {
+      "name": "ruf-frontend",
+      "path": "ruf-frontend"
+    },
+    {
+      "name": "ruf-backend",
+      "path": "ruf-backend"
+    }
+  ],
+  "settings": {
+    "terminal.integrated.cwd": "${workspaceFolder}"
+  }
+}

@@ -4,6 +4,8 @@ import Proyectos from "../components/Proyectos";
 import QuienesSomos from "../components/QuienesSomos";
 import Testimonios from "../components/Testimonios";
 
+export const dynamic = "force-dynamic";
+
 export default function Home() {
   return (
     <main>

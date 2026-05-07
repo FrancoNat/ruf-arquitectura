@@ -1,0 +1,16 @@
+@RufApi_HostAddress = http://localhost:5000
+
+GET {{RufApi_HostAddress}}/api/health
+Accept: application/json
+
+###
+
+GET {{RufApi_HostAddress}}/api/proyectos?estado=publicado
+Accept: application/json
+
+###
+
+GET {{RufApi_HostAddress}}/api/agenda/horarios-disponibles?fecha=2026-05-10
+Accept: application/json
+
+###

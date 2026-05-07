@@ -33,13 +33,13 @@ Versión de Node esperada:
 
 Archivo relacionado:
 
-- [.nvmrc](/Users/franco/Desktop/ruf-arquitectura/.nvmrc:1)
+- [.nvmrc](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/.nvmrc:1)
 
 ## 3. estructura principal
 
 ### app router
 
-Rutas principales dentro de [src/app](/Users/franco/Desktop/ruf-arquitectura/src/app):
+Rutas principales dentro de [src/app](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/app):
 
 - `/`
 - `/agenda`
@@ -60,38 +60,38 @@ Rutas principales dentro de [src/app](/Users/franco/Desktop/ruf-arquitectura/src
 
 Componentes públicos:
 
-- [Navbar.jsx](/Users/franco/Desktop/ruf-arquitectura/src/components/Navbar.jsx:1)
-- [Hero.jsx](/Users/franco/Desktop/ruf-arquitectura/src/components/Hero.jsx:1)
-- [Proyectos.jsx](/Users/franco/Desktop/ruf-arquitectura/src/components/Proyectos.jsx:1)
-- [Testimonios.jsx](/Users/franco/Desktop/ruf-arquitectura/src/components/Testimonios.jsx:1)
-- [QuienesSomos.jsx](/Users/franco/Desktop/ruf-arquitectura/src/components/QuienesSomos.jsx:1)
-- [Footer.jsx](/Users/franco/Desktop/ruf-arquitectura/src/components/Footer.jsx:1)
+- [Navbar.jsx](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/components/Navbar.jsx:1)
+- [Hero.jsx](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/components/Hero.jsx:1)
+- [Proyectos.jsx](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/components/Proyectos.jsx:1)
+- [Testimonios.jsx](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/components/Testimonios.jsx:1)
+- [QuienesSomos.jsx](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/components/QuienesSomos.jsx:1)
+- [Footer.jsx](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/components/Footer.jsx:1)
 
 Componentes admin:
 
-- [AdminLayout.jsx](/Users/franco/Desktop/ruf-arquitectura/src/components/admin/AdminLayout.jsx:1)
-- [AdminSidebar.jsx](/Users/franco/Desktop/ruf-arquitectura/src/components/admin/AdminSidebar.jsx:1)
-- [AdminCard.jsx](/Users/franco/Desktop/ruf-arquitectura/src/components/admin/AdminCard.jsx:1)
-- [ProyectoForm.jsx](/Users/franco/Desktop/ruf-arquitectura/src/components/admin/ProyectoForm.jsx:1)
-- [ProyectoAdminCard.jsx](/Users/franco/Desktop/ruf-arquitectura/src/components/admin/ProyectoAdminCard.jsx:1)
-- [ImageManager.jsx](/Users/franco/Desktop/ruf-arquitectura/src/components/admin/ImageManager.jsx:1)
-- [TestimonioForm.jsx](/Users/franco/Desktop/ruf-arquitectura/src/components/admin/TestimonioForm.jsx:1)
-- [TestimonioAdminCard.jsx](/Users/franco/Desktop/ruf-arquitectura/src/components/admin/TestimonioAdminCard.jsx:1)
-- [StarsInput.jsx](/Users/franco/Desktop/ruf-arquitectura/src/components/admin/StarsInput.jsx:1)
-- [AdminCalendar.jsx](/Users/franco/Desktop/ruf-arquitectura/src/components/admin/AdminCalendar.jsx:1)
-- [DayDetailPanel.jsx](/Users/franco/Desktop/ruf-arquitectura/src/components/admin/DayDetailPanel.jsx:1)
-- [ReunionAdminCard.jsx](/Users/franco/Desktop/ruf-arquitectura/src/components/admin/ReunionAdminCard.jsx:1)
-- [HorarioSlotAdmin.jsx](/Users/franco/Desktop/ruf-arquitectura/src/components/admin/HorarioSlotAdmin.jsx:1)
-- [CategoriaManager.jsx](/Users/franco/Desktop/ruf-arquitectura/src/components/admin/CategoriaManager.jsx:1)
+- [AdminLayout.jsx](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/components/admin/AdminLayout.jsx:1)
+- [AdminSidebar.jsx](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/components/admin/AdminSidebar.jsx:1)
+- [AdminCard.jsx](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/components/admin/AdminCard.jsx:1)
+- [ProyectoForm.jsx](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/components/admin/ProyectoForm.jsx:1)
+- [ProyectoAdminCard.jsx](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/components/admin/ProyectoAdminCard.jsx:1)
+- [ImageManager.jsx](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/components/admin/ImageManager.jsx:1)
+- [TestimonioForm.jsx](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/components/admin/TestimonioForm.jsx:1)
+- [TestimonioAdminCard.jsx](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/components/admin/TestimonioAdminCard.jsx:1)
+- [StarsInput.jsx](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/components/admin/StarsInput.jsx:1)
+- [AdminCalendar.jsx](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/components/admin/AdminCalendar.jsx:1)
+- [DayDetailPanel.jsx](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/components/admin/DayDetailPanel.jsx:1)
+- [ReunionAdminCard.jsx](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/components/admin/ReunionAdminCard.jsx:1)
+- [HorarioSlotAdmin.jsx](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/components/admin/HorarioSlotAdmin.jsx:1)
+- [CategoriaManager.jsx](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/components/admin/CategoriaManager.jsx:1)
 
 Componentes agenda pública:
 
-- [PublicAgendaForm.jsx](/Users/franco/Desktop/ruf-arquitectura/src/components/agenda/PublicAgendaForm.jsx:1)
-- [HorariosDisponibles.jsx](/Users/franco/Desktop/ruf-arquitectura/src/components/agenda/HorariosDisponibles.jsx:1)
+- [PublicAgendaForm.jsx](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/components/agenda/PublicAgendaForm.jsx:1)
+- [HorariosDisponibles.jsx](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/components/agenda/HorariosDisponibles.jsx:1)
 
 ## 4. identidad visual
 
-La paleta principal vive en [src/app/globals.css](/Users/franco/Desktop/ruf-arquitectura/src/app/globals.css:1).
+La paleta principal vive en [src/app/globals.css](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/app/globals.css:1).
 
 Variables más importantes:
 
@@ -120,7 +120,7 @@ La home está compuesta por:
 
 Archivo:
 
-- [src/app/page.js](/Users/franco/Desktop/ruf-arquitectura/src/app/page.js:1)
+- [src/app/page.js](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/app/page.js:1)
 
 ### navbar
 
@@ -213,7 +213,7 @@ La página completa incluye:
 
 Archivo principal:
 
-- [src/app/agenda/page.js](/Users/franco/Desktop/ruf-arquitectura/src/app/agenda/page.js:1)
+- [src/app/agenda/page.js](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/app/agenda/page.js:1)
 
 Funcionalidad actual:
 
@@ -234,7 +234,7 @@ Reglas de disponibilidad:
 
 ## 6. footer
 
-El footer se renderiza globalmente desde [src/app/layout.js](/Users/franco/Desktop/ruf-arquitectura/src/app/layout.js:1).
+El footer se renderiza globalmente desde [src/app/layout.js](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/app/layout.js:1).
 
 Incluye:
 
@@ -249,7 +249,7 @@ Incluye:
 
 ## 7. seo implementado
 
-La metadata global vive en [src/app/layout.js](/Users/franco/Desktop/ruf-arquitectura/src/app/layout.js:1).
+La metadata global vive en [src/app/layout.js](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/app/layout.js:1).
 
 Incluye:
 
@@ -319,7 +319,7 @@ Muestra:
 
 Se manejan desde:
 
-- [src/components/admin/CategoriaManager.jsx](/Users/franco/Desktop/ruf-arquitectura/src/components/admin/CategoriaManager.jsx:1)
+- [src/components/admin/CategoriaManager.jsx](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/components/admin/CategoriaManager.jsx:1)
 
 Funcionalidades:
 
@@ -334,7 +334,7 @@ Storage key usada:
 
 Archivo base:
 
-- [src/data/adminCategorias.js](/Users/franco/Desktop/ruf-arquitectura/src/data/adminCategorias.js:1)
+- [src/data/adminCategorias.js](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/data/adminCategorias.js:1)
 
 Categorías iniciales:
 
@@ -453,7 +453,7 @@ Toda la lógica parte de mocks compartidos.
 
 Archivo:
 
-- [src/data/proyectos.js](/Users/franco/Desktop/ruf-arquitectura/src/data/proyectos.js:1)
+- [src/data/proyectos.js](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/data/proyectos.js:1)
 
 Hoy contiene proyectos mock con:
 
@@ -469,7 +469,7 @@ Hoy contiene proyectos mock con:
 
 Archivo:
 
-- [src/data/adminProyectos.js](/Users/franco/Desktop/ruf-arquitectura/src/data/adminProyectos.js:1)
+- [src/data/adminProyectos.js](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/data/adminProyectos.js:1)
 
 Contiene:
 
@@ -490,13 +490,13 @@ Contiene:
 
 Archivo:
 
-- [src/data/adminTestimonios.js](/Users/franco/Desktop/ruf-arquitectura/src/data/adminTestimonios.js:1)
+- [src/data/adminTestimonios.js](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/data/adminTestimonios.js:1)
 
 ### agenda compartida
 
 Archivo:
 
-- [src/data/agendaMock.js](/Users/franco/Desktop/ruf-arquitectura/src/data/agendaMock.js:1)
+- [src/data/agendaMock.js](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/data/agendaMock.js:1)
 
 Exporta:
 
@@ -523,10 +523,10 @@ Estado actual de persistencia:
 
 Ubicaciones principales:
 
-- logos: [public/images/logos](/Users/franco/Desktop/ruf-arquitectura/public/images/logos)
-- proyectos: [public/images/proyectos](/Users/franco/Desktop/ruf-arquitectura/public/images/proyectos)
-- equipo: [public/images/equipo](/Users/franco/Desktop/ruf-arquitectura/public/images/equipo)
-- testimonios: [public/images/testimonios](/Users/franco/Desktop/ruf-arquitectura/public/images/testimonios)
+- logos: [public/images/logos](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/public/images/logos)
+- proyectos: [public/images/proyectos](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/public/images/proyectos)
+- equipo: [public/images/equipo](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/public/images/equipo)
+- testimonios: [public/images/testimonios](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/public/images/testimonios)
 
 ## 13. responsive
 
@@ -585,13 +585,13 @@ Admin demo:
 
 Si alguien nuevo entra al repo, conviene mirar primero:
 
-1. [src/app/layout.js](/Users/franco/Desktop/ruf-arquitectura/src/app/layout.js:1)
-2. [src/app/page.js](/Users/franco/Desktop/ruf-arquitectura/src/app/page.js:1)
-3. [src/components/Navbar.jsx](/Users/franco/Desktop/ruf-arquitectura/src/components/Navbar.jsx:1)
-4. [src/components/Proyectos.jsx](/Users/franco/Desktop/ruf-arquitectura/src/components/Proyectos.jsx:1)
-5. [src/app/proyectos/page.js](/Users/franco/Desktop/ruf-arquitectura/src/app/proyectos/page.js:1)
-6. [src/app/agenda/page.js](/Users/franco/Desktop/ruf-arquitectura/src/app/agenda/page.js:1)
-7. [src/app/admin/dashboard/page.js](/Users/franco/Desktop/ruf-arquitectura/src/app/admin/dashboard/page.js:1)
-8. [src/components/admin/ProyectoForm.jsx](/Users/franco/Desktop/ruf-arquitectura/src/components/admin/ProyectoForm.jsx:1)
-9. [src/components/admin/CategoriaManager.jsx](/Users/franco/Desktop/ruf-arquitectura/src/components/admin/CategoriaManager.jsx:1)
-10. [src/data/agendaMock.js](/Users/franco/Desktop/ruf-arquitectura/src/data/agendaMock.js:1)
+1. [src/app/layout.js](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/app/layout.js:1)
+2. [src/app/page.js](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/app/page.js:1)
+3. [src/components/Navbar.jsx](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/components/Navbar.jsx:1)
+4. [src/components/Proyectos.jsx](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/components/Proyectos.jsx:1)
+5. [src/app/proyectos/page.js](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/app/proyectos/page.js:1)
+6. [src/app/agenda/page.js](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/app/agenda/page.js:1)
+7. [src/app/admin/dashboard/page.js](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/app/admin/dashboard/page.js:1)
+8. [src/components/admin/ProyectoForm.jsx](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/components/admin/ProyectoForm.jsx:1)
+9. [src/components/admin/CategoriaManager.jsx](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/components/admin/CategoriaManager.jsx:1)
+10. [src/data/agendaMock.js](/Users/franco/Desktop/ruf-arquitectura/ruf-frontend/src/data/agendaMock.js:1)
