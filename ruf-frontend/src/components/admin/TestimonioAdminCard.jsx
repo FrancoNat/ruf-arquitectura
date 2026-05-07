@@ -5,6 +5,8 @@ import Link from "next/link";
 
 export default function TestimonioAdminCard({
   testimonio,
+  updating = false,
+  deleting = false,
   onToggleEstado,
   onEliminar,
 }) {
@@ -63,18 +65,24 @@ export default function TestimonioAdminCard({
 
         <button
           type="button"
+          disabled={updating}
           onClick={() => onToggleEstado(testimonio.id)}
           className="rounded-lg border border-primary/20 px-4 py-2 text-sm text-primary transition hover:bg-background"
         >
-          {testimonio.estado === "activo" ? "desactivar" : "activar"}
+          {updating
+            ? "actualizando..."
+            : testimonio.estado === "activo"
+              ? "desactivar"
+              : "activar"}
         </button>
 
         <button
           type="button"
+          disabled={deleting}
           onClick={() => onEliminar(testimonio.id)}
           className="rounded-lg border border-primary/20 px-4 py-2 text-sm text-primary transition hover:bg-background"
         >
-          eliminar
+          {deleting ? "eliminando..." : "eliminar"}
         </button>
       </div>
     </article>

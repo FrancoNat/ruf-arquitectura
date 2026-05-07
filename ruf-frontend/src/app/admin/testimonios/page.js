@@ -1,31 +1,8 @@
-"use client";
-
 import Link from "next/link";
-import { useState } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
-import TestimonioAdminCard from "@/components/admin/TestimonioAdminCard";
-import { adminTestimonios } from "@/data/adminTestimonios";
+import AdminTestimoniosClient from "@/components/admin/AdminTestimoniosClient";
 
 export default function AdminTestimoniosPage() {
-  const [testimonios, setTestimonios] = useState(adminTestimonios);
-
-  const toggleEstado = (id) => {
-    setTestimonios((prev) =>
-      prev.map((testimonio) =>
-        testimonio.id === id
-          ? {
-              ...testimonio,
-              estado: testimonio.estado === "activo" ? "inactivo" : "activo",
-            }
-          : testimonio
-      )
-    );
-  };
-
-  const eliminar = (id) => {
-    setTestimonios((prev) => prev.filter((testimonio) => testimonio.id !== id));
-  };
-
   return (
     <AdminLayout
       titulo="gestionar testimonios"
@@ -39,16 +16,7 @@ export default function AdminTestimoniosPage() {
         </Link>
       }
     >
-      <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
-        {testimonios.map((testimonio) => (
-          <TestimonioAdminCard
-            key={testimonio.id}
-            testimonio={testimonio}
-            onToggleEstado={toggleEstado}
-            onEliminar={eliminar}
-          />
-        ))}
-      </div>
+      <AdminTestimoniosClient />
     </AdminLayout>
   );
 }

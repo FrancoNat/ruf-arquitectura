@@ -1,15 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import AdminCalendar from "@/components/admin/AdminCalendar";
 import DayDetailPanel from "@/components/admin/DayDetailPanel";
 import {
-  bloqueosMock,
-  getHorariosDisponibles,
-  horariosBase,
-  reunionesMock,
-} from "@/data/agendaMock";
+  createBloqueo,
+  deleteBloqueo,
+  deleteReunion,
+  getAdminBloqueos,
+  getAdminReuniones,
+  getHorariosBase,
+  updateEstadoReunion,
+} from "@/services/agenda";
 
 function formatDateKey(date) {
   const year = date.getFullYear();
@@ -19,12 +22,43 @@ function formatDateKey(date) {
 }
 
 export default function AdminAgendaPage() {
-  const [reuniones, setReuniones] = useState(reunionesMock);
-  const [bloqueos, setBloqueos] = useState(bloqueosMock);
+  const [reuniones, setReuniones] = useState([]);
+  const [bloqueos, setBloqueos] = useState([]);
+  const [horariosBase, setHorariosBase] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date(2026, 4, 1));
   const [selectedDate, setSelectedDate] = useState(new Date(2026, 4, 10));
 
   const selectedDateKey = formatDateKey(selectedDate);
+
+  useEffect(() => {
+    let activo = true;
+
+    Promise.all([getHorariosBase(), getAdminReuniones(), getAdminBloqueos()])
+      .then(([horarios, reunionesData, bloqueosData]) => {
+        if (!activo) return;
+        setHorariosBase(horarios);
+        setReuniones(reunionesData);
+        setBloqueos(bloqueosData);
+        setError(false);
+      })
+      .catch(() => {
+        if (!activo) return;
+        setHorariosBase([]);
+        setReuniones([]);
+        setBloqueos([]);
+        setError(true);
+      })
+      .finally(() => {
+        if (!activo) return;
+        setLoading(false);
+      });
+
+    return () => {
+      activo = false;
+    };
+  }, []);
 
   const reunionesDelDia = useMemo(
     () =>
@@ -43,59 +77,89 @@ export default function AdminAgendaPage() {
   );
 
   const horariosDisponibles = useMemo(
-    () =>
-      getHorariosDisponibles(
-        selectedDateKey,
-        reuniones,
-        bloqueos,
-        horariosBase
-      ),
-    [selectedDateKey, reuniones, bloqueos]
+    () => {
+      const ocupadosPorReunion = reuniones
+        .filter(
+          (reunion) =>
+            reunion.fecha === selectedDateKey &&
+            (reunion.estado === "pendiente" || reunion.estado === "confirmada")
+        )
+        .map((reunion) => reunion.hora);
+
+      const horariosBloqueados = bloqueos
+        .filter((bloqueo) => bloqueo.fecha === selectedDateKey)
+        .map((bloqueo) => bloqueo.hora);
+
+      return horariosBase.filter(
+        (hora) =>
+          !ocupadosPorReunion.includes(hora) &&
+          !horariosBloqueados.includes(hora)
+      );
+    },
+    [selectedDateKey, reuniones, bloqueos, horariosBase]
   );
 
-  const confirmarReunion = (id) => {
-    setReuniones((prev) =>
-      prev.map((reunion) =>
-        reunion.id === id ? { ...reunion, estado: "confirmada" } : reunion
-      )
-    );
+  const confirmarReunion = async (id) => {
+    try {
+      const reunionActualizada = await updateEstadoReunion(id, "confirmada");
+      setReuniones((prev) =>
+        prev.map((reunion) =>
+          reunion.id === id ? reunionActualizada : reunion
+        )
+      );
+    } catch {
+      alert("no pudimos confirmar la reunión");
+    }
   };
 
-  const cancelarReunion = (id) => {
-    setReuniones((prev) =>
-      prev.map((reunion) =>
-        reunion.id === id ? { ...reunion, estado: "cancelada" } : reunion
-      )
-    );
+  const cancelarReunion = async (id) => {
+    try {
+      const reunionActualizada = await updateEstadoReunion(id, "cancelada");
+      setReuniones((prev) =>
+        prev.map((reunion) =>
+          reunion.id === id ? reunionActualizada : reunion
+        )
+      );
+    } catch {
+      alert("no pudimos cancelar la reunión");
+    }
   };
 
-  const eliminarReunion = (id) => {
-    setReuniones((prev) => prev.filter((reunion) => reunion.id !== id));
+  const eliminarReunion = async (id) => {
+    try {
+      await deleteReunion(id);
+      setReuniones((prev) => prev.filter((reunion) => reunion.id !== id));
+    } catch {
+      alert("no pudimos eliminar la reunión");
+    }
   };
 
-  const bloquearHorario = (hora) => {
+  const bloquearHorario = async (hora) => {
     const motivo = window.prompt("motivo del bloqueo");
 
     if (!motivo) {
       return;
     }
 
-    const nuevoBloqueo = {
-      id: `b-${Date.now()}`,
-      fecha: selectedDateKey,
-      hora,
-      motivo,
-    };
-
-    setBloqueos((prev) => [...prev, nuevoBloqueo]);
-    console.log("bloqueo horario", nuevoBloqueo);
-    alert("horario bloqueado");
+    try {
+      const nuevoBloqueo = await createBloqueo({
+        fecha: selectedDateKey,
+        hora,
+        motivo,
+      });
+      setBloqueos((prev) => [...prev, nuevoBloqueo]);
+    } catch {
+      alert("no pudimos bloquear el horario");
+    }
   };
 
-  const liberarHorario = (id) => {
-    setBloqueos((prev) => prev.filter((bloqueo) => bloqueo.id !== id));
-    console.log("liberar horario", id);
-    alert("horario liberado");
+  const liberarHorario = async (id) => {
+    try {
+      await deleteBloqueo(id);
+      setBloqueos((prev) => prev.filter((bloqueo) => bloqueo.id !== id));
+    } catch {
+      alert("no pudimos liberar el horario");
+    }
   };
 
   return (
@@ -103,27 +167,39 @@ export default function AdminAgendaPage() {
       titulo="agenda"
       descripcion="visualizá el calendario mensual, revisá reuniones y controlá la disponibilidad por día."
     >
-      <AdminCalendar
-        selectedDate={selectedDate}
-        onSelectDate={setSelectedDate}
-        currentMonth={currentMonth}
-        setCurrentMonth={setCurrentMonth}
-        reuniones={reuniones}
-        bloqueos={bloqueos}
-      />
+      {loading ? (
+        <div className="rounded-2xl border border-dashed border-black/10 bg-white px-5 py-8 text-sm text-text/60">
+          cargando agenda...
+        </div>
+      ) : error ? (
+        <div className="rounded-2xl border border-dashed border-black/10 bg-white px-5 py-8 text-sm text-text/60">
+          no pudimos cargar la agenda
+        </div>
+      ) : (
+        <>
+          <AdminCalendar
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
+            currentMonth={currentMonth}
+            setCurrentMonth={setCurrentMonth}
+            reuniones={reuniones}
+            bloqueos={bloqueos}
+          />
 
-      <DayDetailPanel
-        selectedDate={selectedDate}
-        reuniones={reunionesDelDia}
-        bloqueos={bloqueosDelDia}
-        horariosBase={horariosBase}
-        horariosDisponibles={horariosDisponibles}
-        onConfirmarReunion={confirmarReunion}
-        onCancelarReunion={cancelarReunion}
-        onEliminarReunion={eliminarReunion}
-        onBloquearHorario={bloquearHorario}
-        onLiberarHorario={liberarHorario}
-      />
+          <DayDetailPanel
+            selectedDate={selectedDate}
+            reuniones={reunionesDelDia}
+            bloqueos={bloqueosDelDia}
+            horariosBase={horariosBase}
+            horariosDisponibles={horariosDisponibles}
+            onConfirmarReunion={confirmarReunion}
+            onCancelarReunion={cancelarReunion}
+            onEliminarReunion={eliminarReunion}
+            onBloquearHorario={bloquearHorario}
+            onLiberarHorario={liberarHorario}
+          />
+        </>
+      )}
     </AdminLayout>
   );
 }

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-export default function ProyectoAdminCard({ proyecto }) {
+export default function ProyectoAdminCard({ proyecto, deleting = false, onDelete }) {
   return (
     <article className="overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm">
       <div className="relative h-52 w-full">
@@ -48,10 +48,11 @@ export default function ProyectoAdminCard({ proyecto }) {
 
           <button
             type="button"
-            onClick={() => alert(`eliminar: ${proyecto.titulo}`)}
+            disabled={deleting}
+            onClick={() => onDelete?.(proyecto.id)}
             className="rounded-lg border border-primary/20 px-4 py-2 text-sm text-primary transition hover:bg-background"
           >
-            eliminar
+            {deleting ? "eliminando..." : "eliminar"}
           </button>
         </div>
       </div>

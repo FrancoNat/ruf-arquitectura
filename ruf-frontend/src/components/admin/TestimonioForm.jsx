@@ -16,6 +16,8 @@ const baseState = {
 export default function TestimonioForm({
   initialData = null,
   mode = "nuevo",
+  onSubmit,
+  isSubmitting = false,
 }) {
   const initialState = useMemo(
     () => ({
@@ -36,10 +38,25 @@ export default function TestimonioForm({
     }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    console.log(`${mode} testimonio`, form);
-    alert("testimonio guardado");
+
+    const testimonio = {
+      nombre: form.nombre,
+      tipoProyecto: form.tipoProyecto,
+      texto: form.texto,
+      estrellas: Number(form.estrellas),
+      foto: form.foto,
+      estado: form.estado,
+      mostrarEnHome: form.mostrarEnHome,
+    };
+
+    if (onSubmit) {
+      await onSubmit(testimonio);
+      return;
+    }
+
+    console.log(`${mode} testimonio`, testimonio);
   };
 
   return (
@@ -134,9 +151,10 @@ export default function TestimonioForm({
       <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm sm:p-6">
         <button
           type="submit"
+          disabled={isSubmitting}
           className="rounded-xl bg-primary px-5 py-3 text-sm text-white transition hover:opacity-85"
         >
-          guardar testimonio
+          {isSubmitting ? "guardando..." : "guardar testimonio"}
         </button>
       </div>
     </form>

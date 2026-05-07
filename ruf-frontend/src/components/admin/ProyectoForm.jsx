@@ -24,6 +24,8 @@ const baseState = {
 export default function ProyectoForm({
   initialData = null,
   mode = "nuevo",
+  onSubmit,
+  isSubmitting = false,
 }) {
   const initialState = useMemo(
     () => ({
@@ -152,10 +154,29 @@ export default function ProyectoForm({
     });
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    console.log(`${mode} proyecto`, { ...form, categoria: categoriaActual });
-    alert("proyecto guardado");
+
+    const proyecto = {
+      titulo: form.titulo,
+      categoria: categoriaActual,
+      descripcionCorta: form.descripcionCorta,
+      descripcionLarga: form.descripcionLarga,
+      ubicacion: form.ubicacion,
+      anio: form.anio,
+      superficie: form.superficie,
+      estado: form.estado,
+      destacado: form.destacado,
+      imagenPrincipal: form.imagenPrincipal,
+      imagenes: form.imagenes,
+    };
+
+    if (onSubmit) {
+      await onSubmit(proyecto);
+      return;
+    }
+
+    console.log(`${mode} proyecto`, proyecto);
   };
 
   return (
@@ -295,9 +316,10 @@ export default function ProyectoForm({
       <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm sm:p-6">
         <button
           type="submit"
+          disabled={isSubmitting}
           className="rounded-xl bg-primary px-5 py-3 text-sm text-white transition hover:opacity-85"
         >
-          guardar proyecto
+          {isSubmitting ? "guardando..." : "guardar proyecto"}
         </button>
       </div>
     </form>

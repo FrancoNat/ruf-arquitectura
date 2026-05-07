@@ -1,13 +1,12 @@
 import Link from "next/link";
 import AdminLayout from "@/components/admin/AdminLayout";
-import ProyectoAdminCard from "@/components/admin/ProyectoAdminCard";
-import { adminProyectos } from "@/data/adminProyectos";
+import AdminProyectosClient from "@/components/admin/AdminProyectosClient";
 
 export default function AdminProyectosPage() {
   return (
     <AdminLayout
       titulo="gestionar proyectos"
-      descripcion="listado de proyectos mock para simular el flujo de administracion del contenido."
+      descripcion="listado de proyectos cargados desde la api local."
       acciones={
         <Link
           href="/admin/proyectos/nuevo"
@@ -17,11 +16,7 @@ export default function AdminProyectosPage() {
         </Link>
       }
     >
-      <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
-        {adminProyectos.map((proyecto) => (
-          <ProyectoAdminCard key={proyecto.id} proyecto={proyecto} />
-        ))}
-      </div>
+      <AdminProyectosClient />
     </AdminLayout>
   );
 }
