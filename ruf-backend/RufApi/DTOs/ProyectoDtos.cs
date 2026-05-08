@@ -11,5 +11,7 @@ public sealed record ProyectoRequest(
     string Estado,
     bool Destacado,
     string ImagenPrincipal,
-    List<string> Imagenes
+    List<string> Imagenes,
+    string? Slug = null,
+    string? Alt = null
 );
