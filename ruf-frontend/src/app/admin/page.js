@@ -4,9 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-
-const ADMIN_EMAIL = "admin@ruf.com";
-const ADMIN_PASSWORD = "ruf123";
+import { login } from "@/services/auth";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -14,13 +12,15 @@ export default function AdminLoginPage() {
     email: "",
     password: "",
   });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (!form.email || !form.password) {
@@ -28,15 +28,21 @@ export default function AdminLoginPage() {
       return;
     }
 
-    if (
-      form.email.trim().toLowerCase() !== ADMIN_EMAIL ||
-      form.password !== ADMIN_PASSWORD
-    ) {
-      alert("credenciales invalidas");
-      return;
-    }
+    try {
+      setLoading(true);
+      setError("");
+      await login(form.email, form.password);
+      router.push("/admin/dashboard");
+    } catch (err) {
+      if (err.status === 403) {
+        setError("tu usuario está inactivo");
+        return;
+      }
 
-    router.push("/admin/dashboard");
+      setError("email o contraseña incorrectos");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -82,16 +88,23 @@ export default function AdminLoginPage() {
 
           <button
             type="submit"
-            className="w-full rounded-xl bg-primary px-5 py-3 text-white transition hover:opacity-85"
+            disabled={loading}
+            className="w-full rounded-xl bg-primary px-5 py-3 text-white transition hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-55"
           >
-            ingresar
+            {loading ? "ingresando..." : "ingresar"}
           </button>
         </form>
 
+        {error ? (
+          <p className="mt-4 rounded-2xl border border-primary/10 bg-background p-4 text-sm text-primary">
+            {error}
+          </p>
+        ) : null}
+
         <div className="mt-5 rounded-2xl border border-black/5 bg-background p-4 text-sm text-text/70">
           <p className="font-medium text-primary">acceso demo</p>
-          <p className="mt-2">email: {ADMIN_EMAIL}</p>
-          <p>contraseña: {ADMIN_PASSWORD}</p>
+          <p className="mt-2">email: admin@ruf.com</p>
+          <p>contraseña: ruf123</p>
         </div>
 
         <div className="mt-5 text-center text-sm text-text/60">

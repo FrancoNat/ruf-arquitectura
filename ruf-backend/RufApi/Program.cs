@@ -1,4 +1,10 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using RufApi.Data;
 using RufApi.DTOs;
 using RufApi.Models;
@@ -10,6 +16,29 @@ const string FrontendCorsPolicy = "FrontendCorsPolicy";
 builder.Services.AddSingleton<InMemoryDatabase>();
 builder.Services.AddDbContext<RufDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddScoped<PasswordHasher<Usuario>>();
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        var key = builder.Configuration["Jwt:Key"]
+            ?? throw new InvalidOperationException("Jwt:Key no está configurado.");
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
+        };
+    });
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("admin"));
+});
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(FrontendCorsPolicy, policy =>
@@ -32,14 +61,172 @@ if (app.Environment.IsDevelopment())
     await SeedProyectoDataAsync(app.Services, app.Logger);
     await SeedTestimonioDataAsync(app.Services, app.Logger);
     await SeedCategoriaDataAsync(app.Services, app.Logger);
+    await SeedUsuarioDataAsync(app.Services, app.Logger);
     await SeedAgendaDataAsync(app.Services, app.Logger);
 }
 
 app.UseCors(FrontendCorsPolicy);
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }))
     .WithName("HealthCheck")
     .WithOpenApi();
+
+var auth = app.MapGroup("/api/auth").WithTags("Auth");
+
+auth.MapPost("/login", async (
+    RufDbContext db,
+    PasswordHasher<Usuario> passwordHasher,
+    IConfiguration configuration,
+    LoginRequest request) =>
+{
+    var email = NormalizeEmail(request.Email);
+    var usuario = await db.Usuarios.FirstOrDefaultAsync(item => item.Email == email);
+
+    if (usuario is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var passwordResult = passwordHasher.VerifyHashedPassword(
+        usuario,
+        usuario.PasswordHash,
+        request.Password);
+
+    if (passwordResult == PasswordVerificationResult.Failed)
+    {
+        return Results.Unauthorized();
+    }
+
+    if (!usuario.Activo)
+    {
+        return Results.Forbid();
+    }
+
+    return Results.Ok(new LoginResponse(
+        GenerateJwtToken(usuario, configuration),
+        MapUsuarioResponse(usuario)));
+});
+
+var adminUsuarios = app.MapGroup("/api/admin/usuarios")
+    .WithTags("Admin Usuarios")
+    .RequireAuthorization();
+
+adminUsuarios.MapGet("/", async (RufDbContext db) =>
+{
+    var usuarios = await db.Usuarios
+        .AsNoTracking()
+        .OrderBy(usuario => usuario.Nombre)
+        .ToListAsync();
+
+    return Results.Ok(usuarios.Select(MapUsuarioResponse));
+});
+
+adminUsuarios.MapPost("/", async (
+    RufDbContext db,
+    PasswordHasher<Usuario> passwordHasher,
+    UsuarioRequest request) =>
+{
+    var validationError = ValidateUsuarioRequest(request, passwordRequired: true);
+    if (validationError is not null)
+    {
+        return Results.BadRequest(new { error = validationError });
+    }
+
+    var email = NormalizeEmail(request.Email);
+    if (await db.Usuarios.AnyAsync(usuario => usuario.Email == email))
+    {
+        return Results.Conflict(new { error = "ese email ya existe" });
+    }
+
+    var now = DateTime.UtcNow;
+    var usuario = new Usuario
+    {
+        Id = Guid.NewGuid().ToString("N"),
+        Nombre = request.Nombre.Trim().ToLowerInvariant(),
+        Email = email,
+        Rol = request.Rol.Trim().ToLowerInvariant(),
+        Activo = request.Activo,
+        CreatedAt = now,
+        UpdatedAt = now
+    };
+    usuario.PasswordHash = passwordHasher.HashPassword(usuario, request.Password!);
+
+    db.Usuarios.Add(usuario);
+    await db.SaveChangesAsync();
+
+    return Results.Created($"/api/admin/usuarios/{usuario.Id}", MapUsuarioResponse(usuario));
+}).RequireAuthorization("AdminOnly");
+
+adminUsuarios.MapPut("/{id}", async (
+    RufDbContext db,
+    PasswordHasher<Usuario> passwordHasher,
+    string id,
+    UsuarioRequest request) =>
+{
+    var validationError = ValidateUsuarioRequest(request, passwordRequired: false);
+    if (validationError is not null)
+    {
+        return Results.BadRequest(new { error = validationError });
+    }
+
+    var usuario = await db.Usuarios.FirstOrDefaultAsync(item => item.Id == id);
+    if (usuario is null)
+    {
+        return Results.NotFound();
+    }
+
+    var email = NormalizeEmail(request.Email);
+    var emailEnUso = await db.Usuarios.AnyAsync(item => item.Id != id && item.Email == email);
+    if (emailEnUso)
+    {
+        return Results.Conflict(new { error = "ese email ya existe" });
+    }
+
+    var dejaDeSerAdminActivo = usuario.Rol == "admin" &&
+        usuario.Activo &&
+        (request.Rol.Trim().ToLowerInvariant() != "admin" || !request.Activo);
+    if (dejaDeSerAdminActivo && await EsUltimoAdminActivoAsync(db, usuario.Id))
+    {
+        return Results.Conflict(new { error = "no se puede desactivar el último admin activo" });
+    }
+
+    usuario.Nombre = request.Nombre.Trim().ToLowerInvariant();
+    usuario.Email = email;
+    usuario.Rol = request.Rol.Trim().ToLowerInvariant();
+    usuario.Activo = request.Activo;
+    usuario.UpdatedAt = DateTime.UtcNow;
+
+    if (!string.IsNullOrWhiteSpace(request.Password))
+    {
+        usuario.PasswordHash = passwordHasher.HashPassword(usuario, request.Password);
+    }
+
+    await db.SaveChangesAsync();
+
+    return Results.Ok(MapUsuarioResponse(usuario));
+}).RequireAuthorization("AdminOnly");
+
+adminUsuarios.MapDelete("/{id}", async (RufDbContext db, string id) =>
+{
+    var usuario = await db.Usuarios.FirstOrDefaultAsync(item => item.Id == id);
+    if (usuario is null)
+    {
+        return Results.NotFound();
+    }
+
+    if (usuario.Rol == "admin" && usuario.Activo && await EsUltimoAdminActivoAsync(db, usuario.Id))
+    {
+        return Results.Conflict(new { error = "no se puede desactivar el último admin activo" });
+    }
+
+    usuario.Activo = false;
+    usuario.UpdatedAt = DateTime.UtcNow;
+    await db.SaveChangesAsync();
+
+    return Results.NoContent();
+}).RequireAuthorization("AdminOnly");
 
 var proyectos = app.MapGroup("/api/proyectos").WithTags("Proyectos");
 
@@ -119,7 +306,7 @@ proyectos.MapPost("/", async (RufDbContext db, ProyectoRequest request) =>
     await db.SaveChangesAsync();
 
     return Results.Created($"/api/proyectos/{proyecto.Slug}", MapProyectoResponse(proyecto));
-});
+}).RequireAuthorization();
 
 proyectos.MapPut("/{id}", async (RufDbContext db, string id, ProyectoRequest request) =>
 {
@@ -158,7 +345,7 @@ proyectos.MapPut("/{id}", async (RufDbContext db, string id, ProyectoRequest req
     await db.SaveChangesAsync();
 
     return Results.Ok(MapProyectoResponse(proyecto));
-});
+}).RequireAuthorization();
 
 proyectos.MapDelete("/{id}", async (RufDbContext db, string id) =>
 {
@@ -175,7 +362,7 @@ proyectos.MapDelete("/{id}", async (RufDbContext db, string id) =>
     await db.SaveChangesAsync();
 
     return Results.NoContent();
-});
+}).RequireAuthorization();
 
 var categorias = app.MapGroup("/api/categorias").WithTags("Categorias");
 
@@ -220,7 +407,7 @@ categorias.MapPost("/", async (RufDbContext db, CategoriaRequest request) =>
     await db.SaveChangesAsync();
 
     return Results.Created($"/api/categorias/{categoria.Id}", MapCategoriaResponse(categoria));
-});
+}).RequireAuthorization();
 
 categorias.MapPut("/{id}", async (RufDbContext db, string id, CategoriaRequest request) =>
 {
@@ -249,7 +436,7 @@ categorias.MapPut("/{id}", async (RufDbContext db, string id, CategoriaRequest r
     await db.SaveChangesAsync();
 
     return Results.Ok(MapCategoriaResponse(categoria));
-});
+}).RequireAuthorization();
 
 categorias.MapDelete("/{id}", async (RufDbContext db, string id) =>
 {
@@ -269,7 +456,7 @@ categorias.MapDelete("/{id}", async (RufDbContext db, string id) =>
     await db.SaveChangesAsync();
 
     return Results.NoContent();
-});
+}).RequireAuthorization();
 
 var testimonios = app.MapGroup("/api/testimonios").WithTags("Testimonios");
 
@@ -337,7 +524,7 @@ testimonios.MapPost("/", async (RufDbContext db, TestimonioRequest request) =>
     await db.SaveChangesAsync();
 
     return Results.Created($"/api/testimonios/{testimonio.Id}", MapTestimonioResponse(testimonio));
-});
+}).RequireAuthorization();
 
 testimonios.MapPut("/{id}", async (RufDbContext db, string id, TestimonioRequest request) =>
 {
@@ -365,7 +552,7 @@ testimonios.MapPut("/{id}", async (RufDbContext db, string id, TestimonioRequest
     await db.SaveChangesAsync();
 
     return Results.Ok(MapTestimonioResponse(testimonio));
-});
+}).RequireAuthorization();
 
 testimonios.MapDelete("/{id}", async (RufDbContext db, string id) =>
 {
@@ -379,7 +566,7 @@ testimonios.MapDelete("/{id}", async (RufDbContext db, string id) =>
     await db.SaveChangesAsync();
 
     return Results.NoContent();
-});
+}).RequireAuthorization();
 
 var agenda = app.MapGroup("/api/agenda").WithTags("Agenda");
 
@@ -504,7 +691,7 @@ agenda.MapPatch("/reuniones/{id}/estado", async (RufDbContext db, string id, Est
     await db.SaveChangesAsync();
 
     return Results.Ok(MapReunionResponse(reunion));
-});
+}).RequireAuthorization();
 
 agenda.MapDelete("/reuniones/{id}", async (RufDbContext db, string id) =>
 {
@@ -518,7 +705,7 @@ agenda.MapDelete("/reuniones/{id}", async (RufDbContext db, string id) =>
     await db.SaveChangesAsync();
 
     return Results.NoContent();
-});
+}).RequireAuthorization();
 
 agenda.MapGet("/bloqueos", async (RufDbContext db, DateOnly? fecha) =>
 {
@@ -572,7 +759,7 @@ agenda.MapPost("/bloqueos", async (RufDbContext db, BloqueoRequest request) =>
     await db.SaveChangesAsync();
 
     return Results.Created($"/api/agenda/bloqueos/{bloqueo.Id}", MapBloqueoResponse(bloqueo));
-});
+}).RequireAuthorization();
 
 agenda.MapDelete("/bloqueos/{id}", async (RufDbContext db, string id) =>
 {
@@ -586,9 +773,101 @@ agenda.MapDelete("/bloqueos/{id}", async (RufDbContext db, string id) =>
     await db.SaveChangesAsync();
 
     return Results.NoContent();
-});
+}).RequireAuthorization();
 
 app.Run();
+
+static string GenerateJwtToken(Usuario usuario, IConfiguration configuration)
+{
+    var key = configuration["Jwt:Key"]
+        ?? throw new InvalidOperationException("Jwt:Key no está configurado.");
+    var issuer = configuration["Jwt:Issuer"];
+    var audience = configuration["Jwt:Audience"];
+    var expiresMinutes = configuration.GetValue("Jwt:ExpiresMinutes", 480);
+    var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
+    var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+    var claims = new[]
+    {
+        new Claim(JwtRegisteredClaimNames.Sub, usuario.Id),
+        new Claim(JwtRegisteredClaimNames.Email, usuario.Email),
+        new Claim(ClaimTypes.NameIdentifier, usuario.Id),
+        new Claim(ClaimTypes.Name, usuario.Nombre),
+        new Claim(ClaimTypes.Email, usuario.Email),
+        new Claim(ClaimTypes.Role, usuario.Rol)
+    };
+
+    var token = new JwtSecurityToken(
+        issuer,
+        audience,
+        claims,
+        expires: DateTime.UtcNow.AddMinutes(expiresMinutes),
+        signingCredentials: credentials);
+
+    return new JwtSecurityTokenHandler().WriteToken(token);
+}
+
+static UsuarioResponse MapUsuarioResponse(Usuario usuario)
+{
+    return new UsuarioResponse(
+        usuario.Id,
+        usuario.Nombre,
+        usuario.Email,
+        usuario.Rol,
+        usuario.Activo,
+        usuario.CreatedAt,
+        usuario.UpdatedAt);
+}
+
+static string? ValidateUsuarioRequest(UsuarioRequest request, bool passwordRequired)
+{
+    if (string.IsNullOrWhiteSpace(request.Nombre))
+    {
+        return "El nombre es requerido.";
+    }
+
+    if (string.IsNullOrWhiteSpace(request.Email))
+    {
+        return "El email es requerido.";
+    }
+
+    if (passwordRequired && string.IsNullOrWhiteSpace(request.Password))
+    {
+        return "La contraseña es requerida.";
+    }
+
+    if (!string.IsNullOrWhiteSpace(request.Password) && request.Password.Length < 6)
+    {
+        return "La contraseña debe tener al menos 6 caracteres.";
+    }
+
+    if (!RolUsuarioValido(request.Rol))
+    {
+        return "El rol debe ser admin o colaborador.";
+    }
+
+    return null;
+}
+
+static bool RolUsuarioValido(string? rol)
+{
+    var roles = new[] { "admin", "colaborador" };
+    return !string.IsNullOrWhiteSpace(rol) &&
+        roles.Contains(rol.Trim(), StringComparer.OrdinalIgnoreCase);
+}
+
+static string NormalizeEmail(string email)
+{
+    return email.Trim().ToLowerInvariant();
+}
+
+static Task<bool> EsUltimoAdminActivoAsync(RufDbContext db, string usuarioId)
+{
+    return db.Usuarios.AnyAsync(usuario =>
+        usuario.Id != usuarioId &&
+        usuario.Rol == "admin" &&
+        usuario.Activo);
+}
 
 static ReunionResponse MapReunionResponse(Reunion reunion)
 {
@@ -1028,6 +1307,41 @@ static async Task SeedCategoriaDataAsync(IServiceProvider services, ILogger logg
     }
 }
 
+static async Task SeedUsuarioDataAsync(IServiceProvider services, ILogger logger)
+{
+    try
+    {
+        using var scope = services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<RufDbContext>();
+        var passwordHasher = scope.ServiceProvider.GetRequiredService<PasswordHasher<Usuario>>();
+
+        if (await db.Usuarios.AnyAsync())
+        {
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+        var usuario = new Usuario
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            Nombre = "admin rüf",
+            Email = "admin@ruf.com",
+            Rol = "admin",
+            Activo = true,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+        usuario.PasswordHash = passwordHasher.HashPassword(usuario, "ruf123");
+
+        db.Usuarios.Add(usuario);
+        await db.SaveChangesAsync();
+    }
+    catch (Exception ex)
+    {
+        logger.LogWarning(ex, "no se pudo ejecutar el seed inicial de usuarios");
+    }
+}
+
 static async Task SeedAgendaDataAsync(IServiceProvider services, ILogger logger)
 {
     try
@@ -1107,6 +1421,19 @@ public sealed record CategoriaResponse(
     string Nombre,
     DateTime CreatedAt,
     DateTime UpdatedAt);
+
+public sealed record UsuarioResponse(
+    string Id,
+    string Nombre,
+    string Email,
+    string Rol,
+    bool Activo,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
+
+public sealed record LoginResponse(
+    string Token,
+    UsuarioResponse Usuario);
 
 public sealed record ReunionResponse(
     string Id,

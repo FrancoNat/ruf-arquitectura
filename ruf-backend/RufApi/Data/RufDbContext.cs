@@ -14,6 +14,7 @@ public sealed class RufDbContext : DbContext
     public DbSet<ProyectoImagen> ProyectoImagenes => Set<ProyectoImagen>();
     public DbSet<Testimonio> Testimonios => Set<Testimonio>();
     public DbSet<Categoria> Categorias => Set<Categoria>();
+    public DbSet<Usuario> Usuarios => Set<Usuario>();
     public DbSet<HorarioBase> HorariosBase => Set<HorarioBase>();
     public DbSet<Reunion> Reuniones => Set<Reunion>();
     public DbSet<BloqueoHorario> BloqueosHorarios => Set<BloqueoHorario>();
@@ -176,6 +177,48 @@ public sealed class RufDbContext : DbContext
                 .IsRequired();
 
             entity.Property(categoria => categoria.UpdatedAt)
+                .IsRequired();
+        });
+
+        modelBuilder.Entity<Usuario>(entity =>
+        {
+            entity.ToTable("usuarios", table =>
+            {
+                table.HasCheckConstraint(
+                    "CK_usuarios_rol",
+                    "\"Rol\" IN ('admin', 'colaborador')");
+            });
+
+            entity.HasKey(usuario => usuario.Id);
+
+            entity.HasIndex(usuario => usuario.Email)
+                .IsUnique();
+
+            entity.Property(usuario => usuario.Id)
+                .HasMaxLength(120);
+
+            entity.Property(usuario => usuario.Nombre)
+                .IsRequired()
+                .HasMaxLength(180);
+
+            entity.Property(usuario => usuario.Email)
+                .IsRequired()
+                .HasMaxLength(180);
+
+            entity.Property(usuario => usuario.PasswordHash)
+                .IsRequired();
+
+            entity.Property(usuario => usuario.Rol)
+                .IsRequired()
+                .HasMaxLength(40);
+
+            entity.Property(usuario => usuario.Activo)
+                .IsRequired();
+
+            entity.Property(usuario => usuario.CreatedAt)
+                .IsRequired();
+
+            entity.Property(usuario => usuario.UpdatedAt)
                 .IsRequired();
         });
 

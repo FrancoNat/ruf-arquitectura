@@ -41,6 +41,12 @@ export default function AdminDashboardPage() {
           >
             nuevo proyecto
           </Link>
+          <Link
+            href="/admin/colaboradores"
+            className="rounded-xl border border-primary/15 px-4 py-3 text-sm text-primary transition hover:bg-background"
+          >
+            colaboradores
+          </Link>
         </>
       }
     >
@@ -59,6 +65,11 @@ export default function AdminDashboardPage() {
           titulo="reuniones"
           valor={String(reuniones)}
           descripcion="solicitudes recientes generadas desde agenda."
+        />
+        <AdminCard
+          titulo="colaboradores"
+          valor="api"
+          descripcion="usuarios con acceso real al panel admin."
         />
       </div>
 
@@ -108,6 +119,18 @@ export default function AdminDashboardPage() {
             className="inline-flex rounded-xl bg-primary px-4 py-3 text-sm text-white transition hover:opacity-85"
           >
             abrir agenda
+          </Link>
+        </AdminCard>
+
+        <AdminCard
+          titulo="colaboradores"
+          descripcion="crea usuarios, ajusta roles y desactiva accesos del panel."
+        >
+          <Link
+            href="/admin/colaboradores"
+            className="inline-flex rounded-xl bg-primary px-4 py-3 text-sm text-white transition hover:opacity-85"
+          >
+            gestionar colaboradores
           </Link>
         </AdminCard>
 
