@@ -1,6 +1,8 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -227,6 +229,84 @@ adminUsuarios.MapDelete("/{id}", async (RufDbContext db, string id) =>
 
     return Results.NoContent();
 }).RequireAuthorization("AdminOnly");
+
+var uploads = app.MapGroup("/api/admin/uploads")
+    .WithTags("Admin Uploads")
+    .RequireAuthorization();
+
+uploads.MapPost("/image", async (HttpRequest request, IConfiguration configuration, ILogger<Program> logger) =>
+{
+    const long maxFileSize = 10 * 1024 * 1024;
+    var allowedTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/svg+xml"
+    };
+
+    if (!request.HasFormContentType)
+    {
+        return Results.BadRequest(new { error = "la solicitud debe ser multipart/form-data" });
+    }
+
+    var form = await request.ReadFormAsync();
+    var file = form.Files.GetFile("file");
+
+    if (file is null || file.Length == 0)
+    {
+        return Results.BadRequest(new { error = "no se recibió ningún archivo" });
+    }
+
+    if (!allowedTypes.Contains(file.ContentType))
+    {
+        return Results.BadRequest(new { error = "tipo de imagen inválido" });
+    }
+
+    if (file.Length > maxFileSize)
+    {
+        return Results.BadRequest(new { error = "la imagen supera el tamaño máximo permitido" });
+    }
+
+    var settings = GetCloudinarySettings(configuration);
+    if (!settings.IsConfigured)
+    {
+        logger.LogError("Cloudinary no está configurado");
+        return Results.Problem("cloudinary no está configurado", statusCode: StatusCodes.Status500InternalServerError);
+    }
+
+    var cloudinary = new Cloudinary(new Account(
+        settings.CloudName,
+        settings.ApiKey,
+        settings.ApiSecret));
+    await using var stream = file.OpenReadStream();
+    var uploadParams = new ImageUploadParams
+    {
+        File = new FileDescription(file.FileName, stream),
+        Folder = "ruf-arquitectura",
+        UseFilename = true,
+        UniqueFilename = true,
+        Overwrite = false
+    };
+
+    try
+    {
+        var result = await cloudinary.UploadAsync(uploadParams);
+        if (result.Error is not null)
+        {
+            logger.LogError("error cloudinary: {Message}", result.Error.Message);
+            return Results.Problem("no pudimos subir la imagen", statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        return Results.Ok(new UploadImageResponse(result.SecureUrl.ToString(), result.PublicId));
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "falló la subida a cloudinary");
+        return Results.Problem("no pudimos subir la imagen", statusCode: StatusCodes.Status500InternalServerError);
+    }
+})
+.DisableAntiforgery();
 
 var proyectos = app.MapGroup("/api/proyectos").WithTags("Proyectos");
 
@@ -869,6 +949,24 @@ static Task<bool> EsUltimoAdminActivoAsync(RufDbContext db, string usuarioId)
         usuario.Activo);
 }
 
+static CloudinarySettings GetCloudinarySettings(IConfiguration configuration)
+{
+    var cloudName = configuration["CLOUDINARY_CLOUD_NAME"]
+        ?? configuration["Cloudinary:CloudName"]
+        ?? string.Empty;
+    var apiKey = configuration["CLOUDINARY_API_KEY"]
+        ?? configuration["Cloudinary:ApiKey"]
+        ?? string.Empty;
+    var apiSecret = configuration["CLOUDINARY_API_SECRET"]
+        ?? configuration["Cloudinary:ApiSecret"]
+        ?? string.Empty;
+
+    return new CloudinarySettings(
+        cloudName.Trim(),
+        apiKey.Trim(),
+        apiSecret.Trim());
+}
+
 static ReunionResponse MapReunionResponse(Reunion reunion)
 {
     return new ReunionResponse(
@@ -1434,6 +1532,21 @@ public sealed record UsuarioResponse(
 public sealed record LoginResponse(
     string Token,
     UsuarioResponse Usuario);
+
+public sealed record UploadImageResponse(
+    string Url,
+    string PublicId);
+
+public sealed record CloudinarySettings(
+    string CloudName,
+    string ApiKey,
+    string ApiSecret)
+{
+    public bool IsConfigured =>
+        !string.IsNullOrWhiteSpace(CloudName) &&
+        !string.IsNullOrWhiteSpace(ApiKey) &&
+        !string.IsNullOrWhiteSpace(ApiSecret);
+}
 
 public sealed record ReunionResponse(
     string Id,

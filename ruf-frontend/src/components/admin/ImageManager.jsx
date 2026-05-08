@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { uploadImage } from "@/services/uploads";
 
 export default function ImageManager({
   imagenPrincipal,
@@ -13,6 +14,8 @@ export default function ImageManager({
   onMoverImagenAbajo,
 }) {
   const [nuevaImagen, setNuevaImagen] = useState("");
+  const [archivo, setArchivo] = useState(null);
+  const [subiendo, setSubiendo] = useState(false);
 
   const handleAgregar = () => {
     const ruta = nuevaImagen.trim();
@@ -26,14 +29,51 @@ export default function ImageManager({
     setNuevaImagen("");
   };
 
+  const handleUpload = async () => {
+    if (!archivo) {
+      alert("seleccioná una imagen");
+      return;
+    }
+
+    try {
+      setSubiendo(true);
+      const url = await uploadImage(archivo);
+      onAgregarImagen(url);
+      setArchivo(null);
+      alert("imagen subida");
+    } catch (err) {
+      alert(err.data?.error || "no pudimos subir la imagen");
+    } finally {
+      setSubiendo(false);
+    }
+  };
+
   return (
     <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm sm:p-6">
       <div className="flex flex-col gap-4">
         <div>
           <p className="text-sm text-text/80">galería de imágenes</p>
           <p className="mt-1 text-xs leading-relaxed text-text/55">
-            agregá rutas locales, elegí una principal y ordená la secuencia.
+            subí imágenes reales o agregá rutas manuales, elegí una principal y ordená la secuencia.
           </p>
+        </div>
+
+        <div className="flex flex-col gap-3 rounded-xl border border-black/5 bg-background p-4 sm:flex-row sm:items-center">
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/svg+xml"
+            onChange={(event) => setArchivo(event.target.files?.[0] || null)}
+            className="w-full text-sm text-text/70 file:mr-4 file:rounded-lg file:border-0 file:bg-white file:px-4 file:py-2 file:text-sm file:text-primary"
+          />
+
+          <button
+            type="button"
+            onClick={handleUpload}
+            disabled={subiendo}
+            className="rounded-xl bg-primary px-5 py-3 text-sm text-white transition hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-55"
+          >
+            {subiendo ? "subiendo..." : "subir imagen"}
+          </button>
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row">

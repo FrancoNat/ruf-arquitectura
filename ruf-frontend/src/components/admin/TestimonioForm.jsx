@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import StarsInput from "./StarsInput";
+import { uploadImage } from "@/services/uploads";
 
 const baseState = {
   nombre: "",
@@ -28,6 +30,8 @@ export default function TestimonioForm({
   );
 
   const [form, setForm] = useState(initialState);
+  const [archivo, setArchivo] = useState(null);
+  const [subiendoFoto, setSubiendoFoto] = useState(false);
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -57,6 +61,25 @@ export default function TestimonioForm({
     }
 
     console.log(`${mode} testimonio`, testimonio);
+  };
+
+  const handleUploadFoto = async () => {
+    if (!archivo) {
+      alert("seleccioná una foto");
+      return;
+    }
+
+    try {
+      setSubiendoFoto(true);
+      const url = await uploadImage(archivo);
+      setForm((prev) => ({ ...prev, foto: url }));
+      setArchivo(null);
+      alert("foto subida");
+    } catch (err) {
+      alert(err.data?.error || "no pudimos subir la foto");
+    } finally {
+      setSubiendoFoto(false);
+    }
   };
 
   return (
@@ -121,6 +144,39 @@ export default function TestimonioForm({
               className="w-full rounded-xl border border-black/10 bg-background px-4 py-3 outline-none transition focus:border-primary"
             />
           </label>
+
+          <div className="space-y-3 rounded-xl border border-black/5 bg-background p-4 text-sm text-text/80">
+            <span>subir foto</span>
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/svg+xml"
+              onChange={(event) => setArchivo(event.target.files?.[0] || null)}
+              className="w-full text-sm text-text/70 file:mr-4 file:rounded-lg file:border-0 file:bg-white file:px-4 file:py-2 file:text-sm file:text-primary"
+            />
+            <button
+              type="button"
+              onClick={handleUploadFoto}
+              disabled={subiendoFoto}
+              className="rounded-xl bg-primary px-4 py-2 text-sm text-white transition hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-55"
+            >
+              {subiendoFoto ? "subiendo..." : "subir foto"}
+            </button>
+          </div>
+
+          {form.foto ? (
+            <div className="space-y-2 text-sm text-text/80">
+              <span>preview</span>
+              <div className="relative h-32 overflow-hidden rounded-xl border border-black/5 bg-background">
+                <Image
+                  src={form.foto}
+                  alt={`foto de ${form.nombre || "cliente"}`}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 320px"
+                  className="object-cover"
+                />
+              </div>
+            </div>
+          ) : null}
 
           <label className="space-y-2 text-sm text-text/80">
             <span>estado</span>
