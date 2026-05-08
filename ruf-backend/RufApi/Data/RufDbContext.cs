@@ -13,6 +13,10 @@ public sealed class RufDbContext : DbContext
     public DbSet<Proyecto> Proyectos => Set<Proyecto>();
     public DbSet<ProyectoImagen> ProyectoImagenes => Set<ProyectoImagen>();
     public DbSet<Testimonio> Testimonios => Set<Testimonio>();
+    public DbSet<Categoria> Categorias => Set<Categoria>();
+    public DbSet<HorarioBase> HorariosBase => Set<HorarioBase>();
+    public DbSet<Reunion> Reuniones => Set<Reunion>();
+    public DbSet<BloqueoHorario> BloqueosHorarios => Set<BloqueoHorario>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -150,6 +154,127 @@ public sealed class RufDbContext : DbContext
             entity.Property(testimonio => testimonio.UpdatedAt)
                 .IsRequired();
 
+        });
+
+        modelBuilder.Entity<Categoria>(entity =>
+        {
+            entity.ToTable("categorias");
+
+            entity.HasKey(categoria => categoria.Id);
+
+            entity.HasIndex(categoria => categoria.Nombre)
+                .IsUnique();
+
+            entity.Property(categoria => categoria.Id)
+                .HasMaxLength(120);
+
+            entity.Property(categoria => categoria.Nombre)
+                .IsRequired()
+                .HasMaxLength(120);
+
+            entity.Property(categoria => categoria.CreatedAt)
+                .IsRequired();
+
+            entity.Property(categoria => categoria.UpdatedAt)
+                .IsRequired();
+        });
+
+        modelBuilder.Entity<HorarioBase>(entity =>
+        {
+            entity.ToTable("horarios_base");
+
+            entity.HasKey(horario => horario.Id);
+
+            entity.HasIndex(horario => horario.Hora)
+                .IsUnique();
+
+            entity.Property(horario => horario.Id)
+                .HasMaxLength(120);
+
+            entity.Property(horario => horario.Hora)
+                .IsRequired();
+
+            entity.Property(horario => horario.Activo)
+                .IsRequired();
+
+            entity.Property(horario => horario.Orden)
+                .IsRequired();
+
+            entity.Property(horario => horario.CreatedAt)
+                .IsRequired();
+
+            entity.Property(horario => horario.UpdatedAt)
+                .IsRequired();
+        });
+
+        modelBuilder.Entity<Reunion>(entity =>
+        {
+            entity.ToTable("reuniones", table =>
+            {
+                table.HasCheckConstraint(
+                    "CK_reuniones_estado",
+                    "\"Estado\" IN ('pendiente', 'confirmada', 'cancelada')");
+            });
+
+            entity.HasKey(reunion => reunion.Id);
+
+            entity.HasIndex(reunion => new { reunion.Fecha, reunion.Hora });
+
+            entity.Property(reunion => reunion.Id)
+                .HasMaxLength(120);
+
+            entity.Property(reunion => reunion.Nombre)
+                .IsRequired()
+                .HasMaxLength(160);
+
+            entity.Property(reunion => reunion.TipoProyecto)
+                .IsRequired()
+                .HasMaxLength(120);
+
+            entity.Property(reunion => reunion.Fecha)
+                .IsRequired();
+
+            entity.Property(reunion => reunion.Hora)
+                .IsRequired();
+
+            entity.Property(reunion => reunion.Estado)
+                .IsRequired()
+                .HasMaxLength(40);
+
+            entity.Property(reunion => reunion.CreatedAt)
+                .IsRequired();
+
+            entity.Property(reunion => reunion.UpdatedAt)
+                .IsRequired();
+        });
+
+        modelBuilder.Entity<BloqueoHorario>(entity =>
+        {
+            entity.ToTable("bloqueos_horarios");
+
+            entity.HasKey(bloqueo => bloqueo.Id);
+
+            entity.HasIndex(bloqueo => new { bloqueo.Fecha, bloqueo.Hora })
+                .IsUnique();
+
+            entity.Property(bloqueo => bloqueo.Id)
+                .HasMaxLength(120);
+
+            entity.Property(bloqueo => bloqueo.Fecha)
+                .IsRequired();
+
+            entity.Property(bloqueo => bloqueo.Hora)
+                .IsRequired();
+
+            entity.Property(bloqueo => bloqueo.Motivo)
+                .IsRequired()
+                .HasMaxLength(300);
+
+            entity.Property(bloqueo => bloqueo.CreatedAt)
+                .IsRequired();
+
+            entity.Property(bloqueo => bloqueo.UpdatedAt)
+                .IsRequired();
         });
     }
 }

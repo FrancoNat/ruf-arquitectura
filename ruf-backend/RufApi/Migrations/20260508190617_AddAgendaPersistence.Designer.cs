@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using RufApi.Data;
@@ -11,9 +12,11 @@ using RufApi.Data;
 namespace RufApi.Migrations
 {
     [DbContext(typeof(RufDbContext))]
-    partial class RufDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260508190617_AddAgendaPersistence")]
+    partial class AddAgendaPersistence
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -51,31 +54,6 @@ namespace RufApi.Migrations
                         .IsUnique();
 
                     b.ToTable("bloqueos_horarios", (string)null);
-                });
-
-            modelBuilder.Entity("RufApi.Models.Categoria", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasMaxLength(120)
-                        .HasColumnType("character varying(120)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasMaxLength(120)
-                        .HasColumnType("character varying(120)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Nombre")
-                        .IsUnique();
-
-                    b.ToTable("categorias", (string)null);
                 });
 
             modelBuilder.Entity("RufApi.Models.HorarioBase", b =>

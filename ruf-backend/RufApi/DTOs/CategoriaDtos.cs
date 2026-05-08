@@ -1,3 +1,3 @@
 namespace RufApi.DTOs;
 
-public sealed record CategoriaRequest(string Nombre);
+public sealed record CategoriaRequest(string Nombre, string? Id = null);

@@ -31,6 +31,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
     await SeedProyectoDataAsync(app.Services, app.Logger);
     await SeedTestimonioDataAsync(app.Services, app.Logger);
+    await SeedCategoriaDataAsync(app.Services, app.Logger);
+    await SeedAgendaDataAsync(app.Services, app.Logger);
 }
 
 app.UseCors(FrontendCorsPolicy);
@@ -177,38 +179,96 @@ proyectos.MapDelete("/{id}", async (RufDbContext db, string id) =>
 
 var categorias = app.MapGroup("/api/categorias").WithTags("Categorias");
 
-categorias.MapGet("/", (InMemoryDatabase db) => Results.Ok(db.Categorias.OrderBy(categoria => categoria.Nombre)));
-
-categorias.MapPost("/", (InMemoryDatabase db, CategoriaRequest request) =>
+categorias.MapGet("/", async (RufDbContext db) =>
 {
-    var id = InMemoryDatabase.EnsureUniqueId(
-        InMemoryDatabase.Slugify(request.Nombre),
-        db.Categorias.Select(categoria => categoria.Id));
+    var categorias = await db.Categorias
+        .AsNoTracking()
+        .OrderBy(categoria => categoria.Nombre)
+        .ToListAsync();
 
-    var categoria = new Categoria(id, request.Nombre.Trim().ToLowerInvariant());
-    db.Categorias.Add(categoria);
-
-    return Results.Created($"/api/categorias/{categoria.Id}", categoria);
+    return Results.Ok(categorias.Select(MapCategoriaResponse));
 });
 
-categorias.MapPut("/{id}", (InMemoryDatabase db, string id, CategoriaRequest request) =>
+categorias.MapPost("/", async (RufDbContext db, CategoriaRequest request) =>
 {
-    var index = db.Categorias.FindIndex(item => item.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
-    if (index < 0)
+    var validationError = ValidateCategoriaRequest(request);
+    if (validationError is not null)
+    {
+        return Results.BadRequest(new { error = validationError });
+    }
+
+    var baseId = InMemoryDatabase.Slugify(request.Id ?? request.Nombre);
+    var id = await EnsureUniqueCategoriaIdAsync(db, baseId);
+    var nombre = request.Nombre.Trim().ToLowerInvariant();
+
+    if (await db.Categorias.AnyAsync(categoria => categoria.Nombre == nombre))
+    {
+        return Results.Conflict(new { error = "esa categoría ya existe" });
+    }
+
+    var now = DateTime.UtcNow;
+
+    var categoria = new Categoria
+    {
+        Id = id,
+        Nombre = nombre,
+        CreatedAt = now,
+        UpdatedAt = now
+    };
+
+    db.Categorias.Add(categoria);
+    await db.SaveChangesAsync();
+
+    return Results.Created($"/api/categorias/{categoria.Id}", MapCategoriaResponse(categoria));
+});
+
+categorias.MapPut("/{id}", async (RufDbContext db, string id, CategoriaRequest request) =>
+{
+    var validationError = ValidateCategoriaRequest(request);
+    if (validationError is not null)
+    {
+        return Results.BadRequest(new { error = validationError });
+    }
+
+    var categoria = await db.Categorias.FirstOrDefaultAsync(item => item.Id == id);
+    if (categoria is null)
     {
         return Results.NotFound();
     }
 
-    var categoria = new Categoria(id, request.Nombre.Trim().ToLowerInvariant());
-    db.Categorias[index] = categoria;
+    var nombre = request.Nombre.Trim().ToLowerInvariant();
+    var nombreEnUso = await db.Categorias.AnyAsync(item => item.Id != id && item.Nombre == nombre);
+    if (nombreEnUso)
+    {
+        return Results.Conflict(new { error = "esa categoría ya existe" });
+    }
 
-    return Results.Ok(categoria);
+    categoria.Nombre = nombre;
+    categoria.UpdatedAt = DateTime.UtcNow;
+
+    await db.SaveChangesAsync();
+
+    return Results.Ok(MapCategoriaResponse(categoria));
 });
 
-categorias.MapDelete("/{id}", (InMemoryDatabase db, string id) =>
+categorias.MapDelete("/{id}", async (RufDbContext db, string id) =>
 {
-    var removed = db.Categorias.RemoveAll(item => item.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
-    return removed == 0 ? Results.NotFound() : Results.NoContent();
+    var categoria = await db.Categorias.FirstOrDefaultAsync(item => item.Id == id);
+    if (categoria is null)
+    {
+        return Results.NotFound();
+    }
+
+    var categoriaEnUso = await db.Proyectos.AnyAsync(proyecto => proyecto.Categoria == categoria.Id);
+    if (categoriaEnUso)
+    {
+        return Results.Conflict(new { error = "no se puede eliminar una categoría en uso" });
+    }
+
+    db.Categorias.Remove(categoria);
+    await db.SaveChangesAsync();
+
+    return Results.NoContent();
 });
 
 var testimonios = app.MapGroup("/api/testimonios").WithTags("Testimonios");
@@ -323,138 +383,295 @@ testimonios.MapDelete("/{id}", async (RufDbContext db, string id) =>
 
 var agenda = app.MapGroup("/api/agenda").WithTags("Agenda");
 
-agenda.MapGet("/horarios-base", (InMemoryDatabase db) => Results.Ok(db.HorariosBase));
-
-agenda.MapGet("/horarios-disponibles", (InMemoryDatabase db, DateOnly fecha) =>
+agenda.MapGet("/horarios-base", async (RufDbContext db) =>
 {
-    var reunionesOcupadas = db.Reuniones
+    var horarios = await db.HorariosBase
+        .AsNoTracking()
+        .Where(horario => horario.Activo)
+        .OrderBy(horario => horario.Orden)
+        .ThenBy(horario => horario.Hora)
+        .ToListAsync();
+
+    return Results.Ok(horarios.Select(horario => FormatHora(horario.Hora)));
+});
+
+agenda.MapGet("/horarios-disponibles", async (RufDbContext db, DateOnly fecha) =>
+{
+    var horariosBase = await db.HorariosBase
+        .AsNoTracking()
+        .Where(horario => horario.Activo)
+        .OrderBy(horario => horario.Orden)
+        .ThenBy(horario => horario.Hora)
+        .Select(horario => horario.Hora)
+        .ToListAsync();
+
+    var reunionesOcupadas = await db.Reuniones
+        .AsNoTracking()
         .Where(reunion =>
             reunion.Fecha == fecha &&
-            (reunion.Estado.Equals("pendiente", StringComparison.OrdinalIgnoreCase) ||
-             reunion.Estado.Equals("confirmada", StringComparison.OrdinalIgnoreCase)))
+            (reunion.Estado == "pendiente" || reunion.Estado == "confirmada"))
         .Select(reunion => reunion.Hora)
-        .ToHashSet();
+        .ToListAsync();
 
-    var bloqueos = db.Bloqueos
+    var bloqueos = await db.BloqueosHorarios
+        .AsNoTracking()
         .Where(bloqueo => bloqueo.Fecha == fecha)
         .Select(bloqueo => bloqueo.Hora)
-        .ToHashSet();
+        .ToListAsync();
 
-    var disponibles = db.HorariosBase
-        .Where(hora => !reunionesOcupadas.Contains(hora) && !bloqueos.Contains(hora))
+    var ocupados = reunionesOcupadas.Concat(bloqueos).ToHashSet();
+
+    var disponibles = horariosBase
+        .Where(hora => !ocupados.Contains(hora))
+        .Select(FormatHora)
         .ToList();
 
     return Results.Ok(disponibles);
 });
 
-agenda.MapGet("/reuniones", (InMemoryDatabase db, DateOnly? fecha) =>
+agenda.MapGet("/reuniones", async (RufDbContext db, DateOnly? fecha) =>
 {
-    var query = db.Reuniones.AsEnumerable();
+    var query = db.Reuniones
+        .AsNoTracking()
+        .AsQueryable();
 
     if (fecha is not null)
     {
         query = query.Where(reunion => reunion.Fecha == fecha);
     }
 
-    return Results.Ok(query.OrderBy(reunion => reunion.Fecha).ThenBy(reunion => reunion.Hora));
+    var reuniones = await query
+        .OrderBy(reunion => reunion.Fecha)
+        .ThenBy(reunion => reunion.Hora)
+        .ToListAsync();
+
+    return Results.Ok(reuniones.Select(MapReunionResponse));
 });
 
-agenda.MapPost("/reuniones", (InMemoryDatabase db, ReunionRequest request) =>
+agenda.MapPost("/reuniones", async (RufDbContext db, ReunionRequest request) =>
 {
-    if (!db.HorariosBase.Contains(request.Hora))
+    var validationError = ValidateReunionRequest(request);
+    if (validationError is not null)
+    {
+        return Results.BadRequest(new { error = validationError });
+    }
+
+    if (!await HorarioBaseActivoExisteAsync(db, request.Hora))
     {
         return Results.BadRequest(new { error = "El horario elegido no existe en la agenda base." });
     }
 
-    var horarioOcupado = db.Reuniones.Any(reunion =>
-        reunion.Fecha == request.Fecha &&
-        reunion.Hora == request.Hora &&
-        (reunion.Estado.Equals("pendiente", StringComparison.OrdinalIgnoreCase) ||
-         reunion.Estado.Equals("confirmada", StringComparison.OrdinalIgnoreCase)));
-
-    var horarioBloqueado = db.Bloqueos.Any(bloqueo => bloqueo.Fecha == request.Fecha && bloqueo.Hora == request.Hora);
-
-    if (horarioOcupado || horarioBloqueado)
+    if (await HorarioOcupadoAsync(db, request.Fecha, request.Hora))
     {
         return Results.Conflict(new { error = "El horario elegido ya no está disponible." });
     }
 
-    var reunion = new Reunion(
-        Guid.NewGuid().ToString("N")[..8],
-        request.Nombre,
-        request.TipoProyecto,
-        request.Fecha,
-        request.Hora,
-        "pendiente");
+    var now = DateTime.UtcNow;
+    var reunion = new Reunion
+    {
+        Id = Guid.NewGuid().ToString("N")[..8],
+        Nombre = request.Nombre.Trim(),
+        TipoProyecto = request.TipoProyecto.Trim(),
+        Fecha = request.Fecha,
+        Hora = request.Hora,
+        Estado = "pendiente",
+        CreatedAt = now,
+        UpdatedAt = now
+    };
 
     db.Reuniones.Add(reunion);
+    await db.SaveChangesAsync();
 
-    return Results.Created($"/api/agenda/reuniones/{reunion.Id}", reunion);
+    return Results.Created($"/api/agenda/reuniones/{reunion.Id}", MapReunionResponse(reunion));
 });
 
-agenda.MapPatch("/reuniones/{id}/estado", (InMemoryDatabase db, string id, EstadoReunionRequest request) =>
+agenda.MapPatch("/reuniones/{id}/estado", async (RufDbContext db, string id, EstadoReunionRequest request) =>
 {
-    var estadosValidos = new[] { "pendiente", "confirmada", "cancelada" };
-    if (!estadosValidos.Contains(request.Estado, StringComparer.OrdinalIgnoreCase))
+    if (!EstadoReunionValido(request.Estado))
     {
         return Results.BadRequest(new { error = "El estado debe ser pendiente, confirmada o cancelada." });
     }
 
-    var index = db.Reuniones.FindIndex(item => item.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
-    if (index < 0)
+    var reunion = await db.Reuniones.FirstOrDefaultAsync(item => item.Id == id);
+    if (reunion is null)
     {
         return Results.NotFound();
     }
 
-    var reunion = db.Reuniones[index] with { Estado = request.Estado.ToLowerInvariant() };
-    db.Reuniones[index] = reunion;
+    reunion.Estado = request.Estado.Trim().ToLowerInvariant();
+    reunion.UpdatedAt = DateTime.UtcNow;
 
-    return Results.Ok(reunion);
+    await db.SaveChangesAsync();
+
+    return Results.Ok(MapReunionResponse(reunion));
 });
 
-agenda.MapDelete("/reuniones/{id}", (InMemoryDatabase db, string id) =>
+agenda.MapDelete("/reuniones/{id}", async (RufDbContext db, string id) =>
 {
-    var removed = db.Reuniones.RemoveAll(item => item.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
-    return removed == 0 ? Results.NotFound() : Results.NoContent();
+    var reunion = await db.Reuniones.FirstOrDefaultAsync(item => item.Id == id);
+    if (reunion is null)
+    {
+        return Results.NotFound();
+    }
+
+    db.Reuniones.Remove(reunion);
+    await db.SaveChangesAsync();
+
+    return Results.NoContent();
 });
 
-agenda.MapGet("/bloqueos", (InMemoryDatabase db, DateOnly? fecha) =>
+agenda.MapGet("/bloqueos", async (RufDbContext db, DateOnly? fecha) =>
 {
-    var query = db.Bloqueos.AsEnumerable();
+    var query = db.BloqueosHorarios
+        .AsNoTracking()
+        .AsQueryable();
 
     if (fecha is not null)
     {
         query = query.Where(bloqueo => bloqueo.Fecha == fecha);
     }
 
-    return Results.Ok(query.OrderBy(bloqueo => bloqueo.Fecha).ThenBy(bloqueo => bloqueo.Hora));
+    var bloqueos = await query
+        .OrderBy(bloqueo => bloqueo.Fecha)
+        .ThenBy(bloqueo => bloqueo.Hora)
+        .ToListAsync();
+
+    return Results.Ok(bloqueos.Select(MapBloqueoResponse));
 });
 
-agenda.MapPost("/bloqueos", (InMemoryDatabase db, BloqueoRequest request) =>
+agenda.MapPost("/bloqueos", async (RufDbContext db, BloqueoRequest request) =>
 {
-    if (!db.HorariosBase.Contains(request.Hora))
+    var validationError = ValidateBloqueoRequest(request);
+    if (validationError is not null)
+    {
+        return Results.BadRequest(new { error = validationError });
+    }
+
+    if (!await HorarioBaseActivoExisteAsync(db, request.Hora))
     {
         return Results.BadRequest(new { error = "El horario elegido no existe en la agenda base." });
     }
 
-    var bloqueo = new Bloqueo(
-        $"b{Guid.NewGuid().ToString("N")[..8]}",
-        request.Fecha,
-        request.Hora,
-        request.Motivo);
+    if (await HorarioOcupadoAsync(db, request.Fecha, request.Hora))
+    {
+        return Results.Conflict(new { error = "El horario elegido ya no está disponible." });
+    }
 
-    db.Bloqueos.Add(bloqueo);
+    var now = DateTime.UtcNow;
+    var bloqueo = new BloqueoHorario
+    {
+        Id = $"b{Guid.NewGuid().ToString("N")[..8]}",
+        Fecha = request.Fecha,
+        Hora = request.Hora,
+        Motivo = request.Motivo.Trim(),
+        CreatedAt = now,
+        UpdatedAt = now
+    };
 
-    return Results.Created($"/api/agenda/bloqueos/{bloqueo.Id}", bloqueo);
+    db.BloqueosHorarios.Add(bloqueo);
+    await db.SaveChangesAsync();
+
+    return Results.Created($"/api/agenda/bloqueos/{bloqueo.Id}", MapBloqueoResponse(bloqueo));
 });
 
-agenda.MapDelete("/bloqueos/{id}", (InMemoryDatabase db, string id) =>
+agenda.MapDelete("/bloqueos/{id}", async (RufDbContext db, string id) =>
 {
-    var removed = db.Bloqueos.RemoveAll(item => item.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
-    return removed == 0 ? Results.NotFound() : Results.NoContent();
+    var bloqueo = await db.BloqueosHorarios.FirstOrDefaultAsync(item => item.Id == id);
+    if (bloqueo is null)
+    {
+        return Results.NotFound();
+    }
+
+    db.BloqueosHorarios.Remove(bloqueo);
+    await db.SaveChangesAsync();
+
+    return Results.NoContent();
 });
 
 app.Run();
+
+static ReunionResponse MapReunionResponse(Reunion reunion)
+{
+    return new ReunionResponse(
+        reunion.Id,
+        reunion.Nombre,
+        reunion.TipoProyecto,
+        reunion.Fecha,
+        FormatHora(reunion.Hora),
+        reunion.Estado,
+        reunion.CreatedAt,
+        reunion.UpdatedAt);
+}
+
+static BloqueoResponse MapBloqueoResponse(BloqueoHorario bloqueo)
+{
+    return new BloqueoResponse(
+        bloqueo.Id,
+        bloqueo.Fecha,
+        FormatHora(bloqueo.Hora),
+        bloqueo.Motivo,
+        bloqueo.CreatedAt,
+        bloqueo.UpdatedAt);
+}
+
+static string FormatHora(TimeOnly hora)
+{
+    return hora.ToString("HH:mm:ss");
+}
+
+static bool EstadoReunionValido(string? estado)
+{
+    var estadosValidos = new[] { "pendiente", "confirmada", "cancelada" };
+    return !string.IsNullOrWhiteSpace(estado) &&
+        estadosValidos.Contains(estado.Trim(), StringComparer.OrdinalIgnoreCase);
+}
+
+static string? ValidateReunionRequest(ReunionRequest request)
+{
+    if (string.IsNullOrWhiteSpace(request.Nombre))
+    {
+        return "El nombre es requerido.";
+    }
+
+    if (string.IsNullOrWhiteSpace(request.TipoProyecto))
+    {
+        return "El tipo de proyecto es requerido.";
+    }
+
+    return null;
+}
+
+static string? ValidateBloqueoRequest(BloqueoRequest request)
+{
+    if (string.IsNullOrWhiteSpace(request.Motivo))
+    {
+        return "El motivo es requerido.";
+    }
+
+    return null;
+}
+
+static Task<bool> HorarioBaseActivoExisteAsync(RufDbContext db, TimeOnly hora)
+{
+    return db.HorariosBase.AnyAsync(item => item.Hora == hora && item.Activo);
+}
+
+static async Task<bool> HorarioOcupadoAsync(RufDbContext db, DateOnly fecha, TimeOnly hora)
+{
+    var horarioConReunion = await db.Reuniones.AnyAsync(reunion =>
+        reunion.Fecha == fecha &&
+        reunion.Hora == hora &&
+        (reunion.Estado == "pendiente" || reunion.Estado == "confirmada"));
+
+    if (horarioConReunion)
+    {
+        return true;
+    }
+
+    return await db.BloqueosHorarios.AnyAsync(bloqueo =>
+        bloqueo.Fecha == fecha &&
+        bloqueo.Hora == hora);
+}
 
 static ProyectoResponse MapProyectoResponse(Proyecto proyecto)
 {
@@ -738,6 +955,123 @@ static async Task SeedTestimonioDataAsync(IServiceProvider services, ILogger log
     }
 }
 
+static CategoriaResponse MapCategoriaResponse(Categoria categoria)
+{
+    return new CategoriaResponse(
+        categoria.Id,
+        categoria.Nombre,
+        categoria.CreatedAt,
+        categoria.UpdatedAt);
+}
+
+static string? ValidateCategoriaRequest(CategoriaRequest request)
+{
+    if (string.IsNullOrWhiteSpace(request.Nombre))
+    {
+        return "El nombre es requerido.";
+    }
+
+    return null;
+}
+
+static async Task<string> EnsureUniqueCategoriaIdAsync(
+    RufDbContext db,
+    string baseId)
+{
+    var id = string.IsNullOrWhiteSpace(baseId)
+        ? Guid.NewGuid().ToString("N")[..8]
+        : baseId;
+    var candidate = id;
+    var suffix = 2;
+
+    while (await db.Categorias.AnyAsync(categoria => categoria.Id == candidate))
+    {
+        candidate = $"{id}-{suffix}";
+        suffix++;
+    }
+
+    return candidate;
+}
+
+static async Task SeedCategoriaDataAsync(IServiceProvider services, ILogger logger)
+{
+    try
+    {
+        using var scope = services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<RufDbContext>();
+
+        if (await db.Categorias.AnyAsync())
+        {
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+        var seeds = new[]
+        {
+            new Categoria("casa", "casa"),
+            new Categoria("interior", "interior"),
+            new Categoria("mueble", "mueble")
+        };
+
+        foreach (var seed in seeds)
+        {
+            seed.CreatedAt = now;
+            seed.UpdatedAt = now;
+            db.Categorias.Add(seed);
+        }
+
+        await db.SaveChangesAsync();
+    }
+    catch (Exception ex)
+    {
+        logger.LogWarning(ex, "no se pudo ejecutar el seed inicial de categorías");
+    }
+}
+
+static async Task SeedAgendaDataAsync(IServiceProvider services, ILogger logger)
+{
+    try
+    {
+        using var scope = services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<RufDbContext>();
+
+        if (await db.HorariosBase.AnyAsync())
+        {
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+        var horarios = new[]
+        {
+            new TimeOnly(10, 0),
+            new TimeOnly(11, 0),
+            new TimeOnly(12, 0),
+            new TimeOnly(16, 0),
+            new TimeOnly(17, 0),
+            new TimeOnly(18, 0)
+        };
+
+        foreach (var (hora, index) in horarios.Select((hora, index) => (hora, index)))
+        {
+            db.HorariosBase.Add(new HorarioBase
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                Hora = hora,
+                Activo = true,
+                Orden = index + 1,
+                CreatedAt = now,
+                UpdatedAt = now
+            });
+        }
+
+        await db.SaveChangesAsync();
+    }
+    catch (Exception ex)
+    {
+        logger.LogWarning(ex, "no se pudo ejecutar el seed inicial de agenda");
+    }
+}
+
 public sealed record ProyectoResponse(
     string Id,
     string Titulo,
@@ -765,5 +1099,29 @@ public sealed record TestimonioResponse(
     string Foto,
     string Estado,
     bool MostrarEnHome,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
+
+public sealed record CategoriaResponse(
+    string Id,
+    string Nombre,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
+
+public sealed record ReunionResponse(
+    string Id,
+    string Nombre,
+    string TipoProyecto,
+    DateOnly Fecha,
+    string Hora,
+    string Estado,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
+
+public sealed record BloqueoResponse(
+    string Id,
+    DateOnly Fecha,
+    string Hora,
+    string Motivo,
     DateTime CreatedAt,
     DateTime UpdatedAt);

@@ -1,10 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import {
-  ADMIN_CATEGORIAS_STORAGE_KEY,
-  adminCategoriasIniciales,
-} from "@/data/adminCategorias";
+import { useEffect, useMemo, useState } from "react";
+import { adminCategoriasIniciales } from "@/data/adminCategorias";
+import { getCategorias } from "@/services/categorias";
 import ImageManager from "./ImageManager";
 
 const baseState = {
@@ -38,36 +36,46 @@ export default function ProyectoForm({
   );
 
   const [form, setForm] = useState(initialState);
-  const categorias = useMemo(() => {
-    if (typeof window === "undefined") {
-      return adminCategoriasIniciales;
-    }
+  const [categorias, setCategorias] = useState([]);
+  const [categoriasError, setCategoriasError] = useState("");
 
-    const categoriasGuardadas = window.localStorage.getItem(
-      ADMIN_CATEGORIAS_STORAGE_KEY
-    );
+  useEffect(() => {
+    let activo = true;
 
-    if (!categoriasGuardadas) {
-      return adminCategoriasIniciales;
-    }
+    async function cargarCategorias() {
+      try {
+        const data = await getCategorias();
+        if (!activo) return;
 
-    try {
-      const categoriasParseadas = JSON.parse(categoriasGuardadas);
+        setCategorias(data);
+        setCategoriasError("");
 
-      if (Array.isArray(categoriasParseadas) && categoriasParseadas.length > 0) {
-        return categoriasParseadas;
+        if (data.length > 0) {
+          setForm((prev) => ({
+            ...prev,
+            categoria: prev.categoria || data[0].id,
+          }));
+        }
+      } catch {
+        if (activo) {
+          setCategoriasError("no pudimos cargar las categorías");
+        }
       }
-    } catch {
-      window.localStorage.removeItem(ADMIN_CATEGORIAS_STORAGE_KEY);
     }
 
-    return adminCategoriasIniciales;
+    cargarCategorias();
+
+    return () => {
+      activo = false;
+    };
   }, []);
-  const categoriaActual = categorias.some(
+
+  const categoriasDisponibles = categorias.length > 0 ? categorias : [];
+  const categoriaActual = categoriasDisponibles.some(
     (categoria) => categoria.id === form.categoria
   )
     ? form.categoria
-    : categorias[0].id;
+    : categoriasDisponibles[0]?.id || form.categoria;
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -200,14 +208,23 @@ export default function ProyectoForm({
               name="categoria"
               value={categoriaActual}
               onChange={handleChange}
+              disabled={categoriasDisponibles.length === 0}
               className="w-full rounded-xl border border-black/10 bg-background px-4 py-3 outline-none transition focus:border-primary"
             >
-              {categorias.map((categoria) => (
+              {categoriasDisponibles.map((categoria) => (
                 <option key={categoria.id} value={categoria.id}>
                   {categoria.nombre}
                 </option>
               ))}
+              {categoriasDisponibles.length === 0 ? (
+                <option value="">sin categorías disponibles</option>
+              ) : null}
             </select>
+            {categoriasError ? (
+              <span className="block text-xs text-primary">
+                {categoriasError}
+              </span>
+            ) : null}
           </label>
 
           <label className="space-y-2 text-sm text-text/80 md:col-span-2">
