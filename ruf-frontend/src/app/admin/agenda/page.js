@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import AdminCalendar from "@/components/admin/AdminCalendar";
 import DayDetailPanel from "@/components/admin/DayDetailPanel";
+import PendingReunionesList from "@/components/admin/PendingReunionesList";
+import { useNotifications } from "@/components/ui/NotificationProvider";
 import {
   createBloqueo,
   deleteBloqueo,
@@ -21,14 +23,23 @@ function formatDateKey(date) {
   return `${year}-${month}-${day}`;
 }
 
+function parseDateKey(fecha) {
+  const [year, month, day] = fecha.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
 export default function AdminAgendaPage() {
+  const { error: notifyError, success, promptDialog } = useNotifications();
+  const today = useMemo(() => new Date(), []);
   const [reuniones, setReuniones] = useState([]);
   const [bloqueos, setBloqueos] = useState([]);
   const [horariosBase, setHorariosBase] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [currentMonth, setCurrentMonth] = useState(new Date(2026, 4, 1));
-  const [selectedDate, setSelectedDate] = useState(new Date(2026, 4, 10));
+  const [currentMonth, setCurrentMonth] = useState(
+    () => new Date(today.getFullYear(), today.getMonth(), 1)
+  );
+  const [selectedDate, setSelectedDate] = useState(today);
 
   const selectedDateKey = formatDateKey(selectedDate);
 
@@ -76,6 +87,17 @@ export default function AdminAgendaPage() {
     [bloqueos, selectedDateKey]
   );
 
+  const reunionesPendientes = useMemo(
+    () =>
+      reuniones
+        .filter((reunion) => reunion.estado === "pendiente")
+        .sort((a, b) => {
+          const fechaCompare = a.fecha.localeCompare(b.fecha);
+          return fechaCompare !== 0 ? fechaCompare : a.hora.localeCompare(b.hora);
+        }),
+    [reuniones]
+  );
+
   const horariosDisponibles = useMemo(
     () => {
       const ocupadosPorReunion = reuniones
@@ -107,8 +129,9 @@ export default function AdminAgendaPage() {
           reunion.id === id ? reunionActualizada : reunion
         )
       );
+      success("reunión confirmada");
     } catch {
-      alert("no pudimos confirmar la reunión");
+      notifyError("no pudimos confirmar la reunión");
     }
   };
 
@@ -120,8 +143,9 @@ export default function AdminAgendaPage() {
           reunion.id === id ? reunionActualizada : reunion
         )
       );
+      success("reunión cancelada");
     } catch {
-      alert("no pudimos cancelar la reunión");
+      notifyError("no pudimos cancelar la reunión");
     }
   };
 
@@ -129,13 +153,19 @@ export default function AdminAgendaPage() {
     try {
       await deleteReunion(id);
       setReuniones((prev) => prev.filter((reunion) => reunion.id !== id));
+      success("reunión eliminada");
     } catch {
-      alert("no pudimos eliminar la reunión");
+      notifyError("no pudimos eliminar la reunión");
     }
   };
 
   const bloquearHorario = async (hora) => {
-    const motivo = window.prompt("motivo del bloqueo");
+    const motivo = await promptDialog({
+      title: "bloquear horario",
+      message: `indicá el motivo para bloquear el horario ${hora}`,
+      label: "motivo del bloqueo",
+      confirmLabel: "bloquear",
+    });
 
     if (!motivo) {
       return;
@@ -148,8 +178,9 @@ export default function AdminAgendaPage() {
         motivo,
       });
       setBloqueos((prev) => [...prev, nuevoBloqueo]);
+      success("horario bloqueado");
     } catch {
-      alert("no pudimos bloquear el horario");
+      notifyError("no pudimos bloquear el horario");
     }
   };
 
@@ -157,9 +188,16 @@ export default function AdminAgendaPage() {
     try {
       await deleteBloqueo(id);
       setBloqueos((prev) => prev.filter((bloqueo) => bloqueo.id !== id));
+      success("horario liberado");
     } catch {
-      alert("no pudimos liberar el horario");
+      notifyError("no pudimos liberar el horario");
     }
+  };
+
+  const seleccionarFecha = (fecha) => {
+    const nuevaFecha = parseDateKey(fecha);
+    setSelectedDate(nuevaFecha);
+    setCurrentMonth(new Date(nuevaFecha.getFullYear(), nuevaFecha.getMonth(), 1));
   };
 
   return (
@@ -177,6 +215,14 @@ export default function AdminAgendaPage() {
         </div>
       ) : (
         <>
+          <PendingReunionesList
+            reuniones={reunionesPendientes}
+            onSelectFecha={seleccionarFecha}
+            onConfirmarReunion={confirmarReunion}
+            onCancelarReunion={cancelarReunion}
+            onEliminarReunion={eliminarReunion}
+          />
+
           <AdminCalendar
             selectedDate={selectedDate}
             onSelectDate={setSelectedDate}

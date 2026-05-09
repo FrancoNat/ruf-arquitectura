@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { useNotifications } from "@/components/ui/NotificationProvider";
 import { uploadImage } from "@/services/uploads";
 
 export default function ImageManager({
@@ -13,6 +14,7 @@ export default function ImageManager({
   onMoverImagenArriba,
   onMoverImagenAbajo,
 }) {
+  const { error: notifyError, success } = useNotifications();
   const [nuevaImagen, setNuevaImagen] = useState("");
   const [archivo, setArchivo] = useState(null);
   const [subiendo, setSubiendo] = useState(false);
@@ -21,7 +23,7 @@ export default function ImageManager({
     const ruta = nuevaImagen.trim();
 
     if (!ruta) {
-      alert("completa una ruta de imagen");
+      notifyError("completa una ruta de imagen");
       return;
     }
 
@@ -31,7 +33,7 @@ export default function ImageManager({
 
   const handleUpload = async () => {
     if (!archivo) {
-      alert("seleccioná una imagen");
+      notifyError("seleccioná una imagen");
       return;
     }
 
@@ -40,9 +42,9 @@ export default function ImageManager({
       const upload = await uploadImage(archivo);
       onAgregarImagen(upload.url);
       setArchivo(null);
-      alert("imagen subida");
+      success("imagen subida");
     } catch (err) {
-      alert(err.data?.error || "no pudimos subir la imagen");
+      notifyError(err.data?.error || "no pudimos subir la imagen");
     } finally {
       setSubiendo(false);
     }

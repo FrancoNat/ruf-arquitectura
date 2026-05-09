@@ -7,10 +7,8 @@ import { getUsuarioActual, logout } from "@/services/auth";
 const links = [
   { href: "/admin/dashboard", label: "dashboard" },
   { href: "/admin/proyectos", label: "gestionar proyectos" },
-  { href: "/admin/proyectos/nuevo", label: "nuevo proyecto" },
   { href: "/admin/testimonios", label: "testimonios" },
   { href: "/admin/agenda", label: "agenda" },
-  { href: "/admin/colaboradores", label: "colaboradores", adminOnly: true },
   { href: "/", label: "volver al sitio" },
 ];
 
@@ -37,17 +35,15 @@ export default function AdminSidebar() {
       ) : null}
 
       <nav className="mt-5 flex flex-col gap-2">
-        {links
-          .filter((link) => !link.adminOnly || usuario?.rol === "admin")
-          .map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="rounded-xl px-4 py-3 text-sm text-text/80 transition hover:bg-background hover:text-primary"
-            >
-              {link.label}
-            </Link>
-          ))}
+        {links.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className="rounded-xl px-4 py-3 text-sm text-text/80 transition hover:bg-background hover:text-primary"
+          >
+            {link.label}
+          </Link>
+        ))}
 
         <button
           type="button"

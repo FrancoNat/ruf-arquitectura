@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { getWhatsappUrl, siteConfig } from "@/config/site";
 
 export default function Footer() {
   return (
@@ -95,10 +96,10 @@ export default function Footer() {
           </h3>
 
           <ul className="space-y-2 text-sm text-white/70">
-            <li>Buenos Aires, Argentina</li>
-            <li>atención online</li>
-            <li>rufarquitectura@gmail.com</li>
-            <li>+54 9 1176619112</li>
+            <li>{siteConfig.contact.location}</li>
+            <li>{siteConfig.contact.modality}</li>
+            <li>{siteConfig.contact.email}</li>
+            <li>{siteConfig.contact.phoneDisplay}</li>
           </ul>
         </div>
 
@@ -108,7 +109,7 @@ export default function Footer() {
           </h3>
 
           <a
-            href="https://wa.me/5491176619112"
+            href={getWhatsappUrl()}
             target="_blank"
             rel="noreferrer"
             className="inline-block w-full rounded-lg border border-white/30 px-5 py-3 text-center transition hover:bg-white hover:text-primary sm:w-auto"

@@ -1,13 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   crearReunion,
   getHorariosDisponibles,
 } from "@/services/agenda";
+import { useNotifications } from "@/components/ui/NotificationProvider";
+import { getWhatsappUrl } from "@/config/site";
+import { getCategorias } from "@/services/categorias";
 import HorariosDisponibles from "./HorariosDisponibles";
 
 export default function PublicAgendaForm() {
+  const { error: notifyError } = useNotifications();
   const [form, setForm] = useState({
     nombre: "",
     tipoProyecto: "",
@@ -18,6 +22,27 @@ export default function PublicAgendaForm() {
   const [cargandoHorarios, setCargandoHorarios] = useState(false);
   const [errorHorarios, setErrorHorarios] = useState(false);
   const [enviando, setEnviando] = useState(false);
+  const [categorias, setCategorias] = useState([]);
+
+  useEffect(() => {
+    let activo = true;
+
+    getCategorias()
+      .then((data) => {
+        if (activo) {
+          setCategorias(data);
+        }
+      })
+      .catch(() => {
+        if (activo) {
+          setCategorias([]);
+        }
+      });
+
+    return () => {
+      activo = false;
+    };
+  }, []);
 
   const cargarHorarios = async (fecha) => {
     if (!fecha) {
@@ -62,7 +87,7 @@ export default function PublicAgendaForm() {
       !form.fecha ||
       !horaSeleccionada
     ) {
-      alert("completá nombre, tipo, fecha y horario");
+      notifyError("completá nombre, tipo, fecha y horario");
       return;
     }
 
@@ -77,7 +102,7 @@ export default function PublicAgendaForm() {
       });
     } catch (error) {
       if (error.message === "error api: 409") {
-        alert("ese horario acaba de ocuparse, elegí otro");
+        notifyError("ese horario acaba de ocuparse, elegí otro");
         setHoraSeleccionada("");
         await cargarHorarios(form.fecha);
         setEnviando(false);
@@ -85,17 +110,16 @@ export default function PublicAgendaForm() {
       }
 
       if (error.message === "error api: 400") {
-        alert("horario inválido");
+        notifyError("horario inválido");
         setEnviando(false);
         return;
       }
 
-      alert("no pudimos agendar la reunión");
+      notifyError("no pudimos agendar la reunión");
       setEnviando(false);
       return;
     }
 
-    const numero = "5491176619112";
     const texto = `hola, quiero agendar una reunión con rüf arquitectura.
 
 nombre: ${form.nombre}
@@ -105,7 +129,7 @@ hora: ${horaSeleccionada}
 
 ¿les queda disponible ese horario?`;
 
-    const url = `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`;
+    const url = getWhatsappUrl(texto);
     window.open(url, "_blank");
     setEnviando(false);
   };
@@ -131,9 +155,11 @@ hora: ${horaSeleccionada}
           className="w-full rounded-lg border border-black/10 p-3"
         >
           <option value="">tipo de proyecto</option>
-          <option value="casa">casa</option>
-          <option value="interior">interior</option>
-          <option value="mueble">mueble</option>
+          {categorias.map((categoria) => (
+            <option key={categoria.id} value={categoria.id}>
+              {categoria.nombre}
+            </option>
+          ))}
         </select>
 
         <input

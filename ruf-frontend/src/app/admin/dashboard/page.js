@@ -2,16 +2,10 @@ import Image from "next/image";
 import Link from "next/link";
 import AdminCard from "@/components/admin/AdminCard";
 import CategoriaManager from "@/components/admin/CategoriaManager";
+import DashboardStats from "@/components/admin/DashboardStats";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { adminProyectos } from "@/data/adminProyectos";
-import { adminTestimonios } from "@/data/adminTestimonios";
-import { reunionesMock } from "@/data/agendaMock";
 
 export default function AdminDashboardPage() {
-  const proyectos = adminProyectos.length;
-  const resenas = adminTestimonios.length;
-  const reuniones = reunionesMock.length;
-
   return (
     <AdminLayout
       titulo="panel admin"
@@ -50,28 +44,7 @@ export default function AdminDashboardPage() {
         </>
       }
     >
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-        <AdminCard
-          titulo="proyectos"
-          valor={String(proyectos)}
-          descripcion="proyectos cargados en el panel admin."
-        />
-        <AdminCard
-          titulo="reseñas"
-          valor={String(resenas)}
-          descripcion="testimonios disponibles para mostrar en el sitio."
-        />
-        <AdminCard
-          titulo="reuniones"
-          valor={String(reuniones)}
-          descripcion="solicitudes recientes generadas desde agenda."
-        />
-        <AdminCard
-          titulo="colaboradores"
-          valor="api"
-          descripcion="usuarios con acceso real al panel admin."
-        />
-      </div>
+      <DashboardStats />
 
       <div className="grid gap-5 lg:grid-cols-3">
         <AdminCard

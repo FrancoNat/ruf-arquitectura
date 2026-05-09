@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import TestimonioForm from "@/components/admin/TestimonioForm";
+import { useNotifications } from "@/components/ui/NotificationProvider";
 import {
   getAdminTestimonioById,
   updateTestimonio,
@@ -10,6 +11,7 @@ import {
 
 export default function AdminEditarTestimonioClient({ id }) {
   const router = useRouter();
+  const { error: notifyError, success } = useNotifications();
   const [testimonio, setTestimonio] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -44,11 +46,11 @@ export default function AdminEditarTestimonioClient({ id }) {
 
     try {
       await updateTestimonio(id, data);
-      alert("testimonio actualizado");
+      success("testimonio actualizado");
       router.push("/admin/testimonios");
       router.refresh();
     } catch {
-      alert("no pudimos actualizar el testimonio");
+      notifyError("no pudimos actualizar el testimonio");
     } finally {
       setIsSubmitting(false);
     }

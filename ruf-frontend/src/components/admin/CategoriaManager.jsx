@@ -7,8 +7,10 @@ import {
   getCategorias,
   updateCategoria,
 } from "@/services/categorias";
+import { useNotifications } from "@/components/ui/NotificationProvider";
 
 export default function CategoriaManager() {
+  const { confirmDialog, error: notifyError, success } = useNotifications();
   const [categorias, setCategorias] = useState([]);
   const [nuevaCategoria, setNuevaCategoria] = useState("");
   const [editandoId, setEditandoId] = useState(null);
@@ -47,7 +49,7 @@ export default function CategoriaManager() {
     const nombre = nuevaCategoria.trim();
 
     if (!nombre) {
-      alert("completá el nombre de la categoría");
+      notifyError("completá el nombre de la categoría");
       return;
     }
 
@@ -56,14 +58,14 @@ export default function CategoriaManager() {
       const categoriaNueva = await createCategoria({ nombre });
       setCategorias((prev) => [...prev, categoriaNueva].sort(ordenarPorNombre));
       setNuevaCategoria("");
-      alert("categoría agregada");
+      success("categoría agregada");
     } catch (err) {
       if (err.status === 409) {
-        alert(err.data?.error || "esa categoría ya existe");
+        notifyError(err.data?.error || "esa categoría ya existe");
         return;
       }
 
-      alert("no pudimos guardar la categoría");
+      notifyError("no pudimos guardar la categoría");
     } finally {
       setSaving(false);
     }
@@ -83,7 +85,7 @@ export default function CategoriaManager() {
     const nombre = nombreEditado.trim();
 
     if (!nombre) {
-      alert("completá el nombre de la categoría");
+      notifyError("completá el nombre de la categoría");
       return;
     }
 
@@ -98,32 +100,43 @@ export default function CategoriaManager() {
           .sort(ordenarPorNombre)
       );
       cancelarEdicion();
-      alert("categoría actualizada");
+      success("categoría actualizada");
     } catch (err) {
       if (err.status === 409) {
-        alert(err.data?.error || "esa categoría ya existe");
+        notifyError(err.data?.error || "esa categoría ya existe");
         return;
       }
 
-      alert("no pudimos actualizar la categoría");
+      notifyError("no pudimos actualizar la categoría");
     } finally {
       setSaving(false);
     }
   };
 
   const eliminarCategoria = async (id) => {
+    const categoria = categorias.find((item) => item.id === id);
+    const confirmar = await confirmDialog({
+      title: "eliminar categoría",
+      message: `¿eliminar ${categoria?.nombre || "esta categoría"}?`,
+      confirmLabel: "eliminar",
+    });
+
+    if (!confirmar) {
+      return;
+    }
+
     try {
       setSaving(true);
       await deleteCategoria(id);
       setCategorias((prev) => prev.filter((categoria) => categoria.id !== id));
-      alert("categoría eliminada");
+      success("categoría eliminada");
     } catch (err) {
       if (err.status === 409) {
-        alert(err.data?.error || "no se puede eliminar una categoría en uso");
+        notifyError(err.data?.error || "no se puede eliminar una categoría en uso");
         return;
       }
 
-      alert("no pudimos eliminar la categoría");
+      notifyError("no pudimos eliminar la categoría");
     } finally {
       setSaving(false);
     }

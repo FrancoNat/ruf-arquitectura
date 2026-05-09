@@ -5,9 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { login } from "@/services/auth";
+import { useNotifications } from "@/components/ui/NotificationProvider";
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const { error: notifyError } = useNotifications();
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -24,7 +26,7 @@ export default function AdminLoginPage() {
     event.preventDefault();
 
     if (!form.email || !form.password) {
-      alert("completa email y contraseña");
+      notifyError("completa email y contraseña");
       return;
     }
 
@@ -100,12 +102,6 @@ export default function AdminLoginPage() {
             {error}
           </p>
         ) : null}
-
-        <div className="mt-5 rounded-2xl border border-black/5 bg-background p-4 text-sm text-text/70">
-          <p className="font-medium text-primary">acceso demo</p>
-          <p className="mt-2">email: admin@ruf.com</p>
-          <p>contraseña: ruf123</p>
-        </div>
 
         <div className="mt-5 text-center text-sm text-text/60">
           <Link href="/" className="transition hover:text-primary">

@@ -1,13 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import StarsInput from "./StarsInput";
+import { useNotifications } from "@/components/ui/NotificationProvider";
+import { getCategorias } from "@/services/categorias";
 import { uploadImage } from "@/services/uploads";
 
 const baseState = {
   nombre: "",
-  tipoProyecto: "vivienda",
+  tipoProyecto: "",
   texto: "",
   estrellas: 5,
   foto: "",
@@ -21,6 +23,7 @@ export default function TestimonioForm({
   onSubmit,
   isSubmitting = false,
 }) {
+  const { error: notifyError, success } = useNotifications();
   const initialState = useMemo(
     () => ({
       ...baseState,
@@ -31,7 +34,28 @@ export default function TestimonioForm({
 
   const [form, setForm] = useState(initialState);
   const [archivo, setArchivo] = useState(null);
+  const [categorias, setCategorias] = useState([]);
   const [subiendoFoto, setSubiendoFoto] = useState(false);
+
+  useEffect(() => {
+    let activo = true;
+
+    getCategorias()
+      .then((data) => {
+        if (activo) {
+          setCategorias(data);
+        }
+      })
+      .catch(() => {
+        if (activo) {
+          setCategorias([]);
+        }
+      });
+
+    return () => {
+      activo = false;
+    };
+  }, []);
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -65,7 +89,7 @@ export default function TestimonioForm({
 
   const handleUploadFoto = async () => {
     if (!archivo) {
-      alert("seleccioná una foto");
+      notifyError("seleccioná una foto");
       return;
     }
 
@@ -74,9 +98,9 @@ export default function TestimonioForm({
       const upload = await uploadImage(archivo);
       setForm((prev) => ({ ...prev, foto: upload.url }));
       setArchivo(null);
-      alert("foto subida");
+      success("foto subida");
     } catch (err) {
-      alert(err.data?.error || "no pudimos subir la foto");
+      notifyError(err.data?.error || "no pudimos subir la foto");
     } finally {
       setSubiendoFoto(false);
     }
@@ -105,10 +129,16 @@ export default function TestimonioForm({
               onChange={handleChange}
               className="w-full rounded-xl border border-black/10 bg-background px-4 py-3 outline-none transition focus:border-primary"
             >
-              <option value="vivienda">vivienda</option>
-              <option value="interiorismo">interiorismo</option>
-              <option value="muebles a medida">muebles a medida</option>
-              <option value="otro">otro</option>
+              <option value="">seleccionar tipo</option>
+              {categorias.map((categoria) => (
+                <option key={categoria.id} value={categoria.id}>
+                  {categoria.nombre}
+                </option>
+              ))}
+              {form.tipoProyecto &&
+              !categorias.some((categoria) => categoria.id === form.tipoProyecto) ? (
+                <option value={form.tipoProyecto}>{form.tipoProyecto}</option>
+              ) : null}
             </select>
           </label>
 

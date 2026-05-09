@@ -3,15 +3,24 @@
 import { useEffect, useState } from "react";
 import { deleteUsuario, getUsuarios } from "@/services/usuarios";
 import { getUsuarioActual } from "@/services/auth";
+import { useNotifications } from "@/components/ui/NotificationProvider";
+import {
+  puedeCrearOEditarColaboradores,
+  puedeEliminarUsuarios,
+  puedeGestionarColaboradores,
+} from "@/services/permisos";
 import ColaboradorCard from "./ColaboradorCard";
 
 export default function ColaboradoresClient() {
+  const { confirmDialog, error: notifyError, success } = useNotifications();
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const usuarioActual = getUsuarioActual();
-  const esAdmin = usuarioActual?.rol === "admin";
+  const puedeGestionar = puedeGestionarColaboradores(usuarioActual);
+  const puedeEditar = puedeCrearOEditarColaboradores(usuarioActual);
+  const puedeEliminar = puedeEliminarUsuarios(usuarioActual);
 
   useEffect(() => {
     let activo = true;
@@ -38,8 +47,19 @@ export default function ColaboradoresClient() {
   }, []);
 
   const desactivarUsuario = async (id) => {
-    if (!esAdmin) {
-      alert("no tenés permisos para esta acción");
+    if (!puedeEliminar) {
+      notifyError("no tenés permisos para esta acción");
+      return;
+    }
+
+    const usuario = usuarios.find((item) => item.id === id);
+    const confirmar = await confirmDialog({
+      title: "desactivar usuario",
+      message: `¿desactivar ${usuario?.nombre || "este usuario"}?`,
+      confirmLabel: "desactivar",
+    });
+
+    if (!confirmar) {
       return;
     }
 
@@ -51,15 +71,15 @@ export default function ColaboradoresClient() {
           usuario.id === id ? { ...usuario, activo: false } : usuario
         )
       );
-      alert("usuario desactivado");
+      success("usuario desactivado");
     } catch (err) {
-      alert(err.data?.error || "no pudimos desactivar el usuario");
+      notifyError(err.data?.error || "no pudimos desactivar el usuario");
     } finally {
       setSaving(false);
     }
   };
 
-  if (!esAdmin) {
+  if (!puedeGestionar) {
     return (
       <div className="rounded-2xl border border-black/5 bg-white p-6 text-sm text-text/70 shadow-sm">
         no tenés permisos para gestionar colaboradores
@@ -90,6 +110,8 @@ export default function ColaboradoresClient() {
           key={usuario.id}
           usuario={usuario}
           disabled={saving}
+          canEdit={puedeEditar}
+          canDeactivate={puedeEliminar}
           onDeactivate={desactivarUsuario}
         />
       ))}

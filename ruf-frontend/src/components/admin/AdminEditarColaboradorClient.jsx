@@ -3,11 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import ColaboradorForm from "@/components/admin/ColaboradorForm";
+import { useNotifications } from "@/components/ui/NotificationProvider";
 import { getUsuarioActual } from "@/services/auth";
 import { getUsuarios, updateUsuario } from "@/services/usuarios";
 
 export default function AdminEditarColaboradorClient({ id }) {
   const router = useRouter();
+  const { error: notifyError, success } = useNotifications();
   const [usuario, setUsuario] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -48,10 +50,10 @@ export default function AdminEditarColaboradorClient({ id }) {
     try {
       setIsSubmitting(true);
       await updateUsuario(id, data);
-      alert("colaborador actualizado");
+      success("colaborador actualizado");
       router.push("/admin/colaboradores");
     } catch (err) {
-      alert(err.data?.error || "no pudimos actualizar el colaborador");
+      notifyError(err.data?.error || "no pudimos actualizar el colaborador");
     } finally {
       setIsSubmitting(false);
     }

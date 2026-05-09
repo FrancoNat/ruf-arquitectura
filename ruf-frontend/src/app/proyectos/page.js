@@ -1,16 +1,21 @@
 import Navbar from "../../components/Navbar";
 import Link from "next/link";
 import ProyectosGrid from "@/components/proyectos/ProyectosGrid";
+import { getCategorias } from "@/services/categorias";
 import { getProyectos } from "@/services/proyectos";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProyectosPage() {
   let proyectos = [];
+  let categorias = [];
   let error = false;
 
   try {
-    proyectos = await getProyectos();
+    [proyectos, categorias] = await Promise.all([
+      getProyectos(),
+      getCategorias(),
+    ]);
   } catch {
     error = true;
   }
@@ -30,7 +35,7 @@ export default async function ProyectosPage() {
               no pudimos cargar los proyectos
             </div>
           ) : (
-            <ProyectosGrid proyectos={proyectos} />
+            <ProyectosGrid proyectos={proyectos} categorias={categorias} />
           )}
           
           <div className="mt-10">

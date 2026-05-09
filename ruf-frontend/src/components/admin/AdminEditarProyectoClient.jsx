@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ProyectoForm from "@/components/admin/ProyectoForm";
+import { useNotifications } from "@/components/ui/NotificationProvider";
 import {
   getAdminProyectoById,
   updateProyecto,
@@ -10,6 +11,7 @@ import {
 
 export default function AdminEditarProyectoClient({ id }) {
   const router = useRouter();
+  const { error: notifyError, success } = useNotifications();
   const [proyecto, setProyecto] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -44,11 +46,11 @@ export default function AdminEditarProyectoClient({ id }) {
 
     try {
       await updateProyecto(id, data);
-      alert("proyecto actualizado");
+      success("proyecto actualizado");
       router.push("/admin/proyectos");
       router.refresh();
     } catch {
-      alert("no pudimos actualizar el proyecto");
+      notifyError("no pudimos actualizar el proyecto");
     } finally {
       setIsSubmitting(false);
     }

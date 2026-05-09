@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useNotifications } from "@/components/ui/NotificationProvider";
 
 const baseState = {
   nombre: "",
@@ -16,6 +17,7 @@ export default function ColaboradorForm({
   onSubmit,
   isSubmitting = false,
 }) {
+  const { error: notifyError } = useNotifications();
   const initialState = useMemo(
     () => ({
       ...baseState,
@@ -39,17 +41,17 @@ export default function ColaboradorForm({
     event.preventDefault();
 
     if (!form.nombre.trim() || !form.email.trim()) {
-      alert("completá nombre y email");
+      notifyError("completá nombre y email");
       return;
     }
 
     if (mode === "nuevo" && form.password.length < 6) {
-      alert("la contraseña debe tener al menos 6 caracteres");
+      notifyError("la contraseña debe tener al menos 6 caracteres");
       return;
     }
 
     if (mode === "editar" && form.password && form.password.length < 6) {
-      alert("la nueva contraseña debe tener al menos 6 caracteres");
+      notifyError("la nueva contraseña debe tener al menos 6 caracteres");
       return;
     }
 

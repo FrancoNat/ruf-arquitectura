@@ -3,11 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import ColaboradorForm from "@/components/admin/ColaboradorForm";
+import { useNotifications } from "@/components/ui/NotificationProvider";
 import { getUsuarioActual } from "@/services/auth";
 import { createUsuario } from "@/services/usuarios";
 
 export default function AdminNuevoColaboradorClient() {
   const router = useRouter();
+  const { error: notifyError, success } = useNotifications();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const usuarioActual = getUsuarioActual();
 
@@ -23,10 +25,10 @@ export default function AdminNuevoColaboradorClient() {
     try {
       setIsSubmitting(true);
       await createUsuario(data);
-      alert("colaborador guardado");
+      success("colaborador guardado");
       router.push("/admin/colaboradores");
     } catch (err) {
-      alert(err.data?.error || "no pudimos guardar el colaborador");
+      notifyError(err.data?.error || "no pudimos guardar el colaborador");
     } finally {
       setIsSubmitting(false);
     }

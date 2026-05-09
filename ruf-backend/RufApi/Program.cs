@@ -1,4 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Globalization;
 using System.Security.Claims;
 using System.Text;
 using CloudinaryDotNet;
@@ -45,8 +46,13 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy(FrontendCorsPolicy, policy =>
     {
+        var allowedOrigins = builder.Configuration
+            .GetSection("Cors:AllowedOrigins")
+            .Get<string[]>()
+            ?? ["http://localhost:3000", "http://127.0.0.1:3000"];
+
         policy
-            .WithOrigins("http://localhost:3000", "http://127.0.0.1:3000")
+            .WithOrigins(allowedOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -63,7 +69,7 @@ if (app.Environment.IsDevelopment())
     await SeedProyectoDataAsync(app.Services, app.Logger);
     await SeedTestimonioDataAsync(app.Services, app.Logger);
     await SeedCategoriaDataAsync(app.Services, app.Logger);
-    await SeedUsuarioDataAsync(app.Services, app.Logger);
+    await SeedUsuarioDataAsync(app.Services, app.Configuration, app.Logger);
     await SeedAgendaDataAsync(app.Services, app.Logger);
 }
 
@@ -210,8 +216,17 @@ adminUsuarios.MapPut("/{id}", async (
     return Results.Ok(MapUsuarioResponse(usuario));
 }).RequireAuthorization("AdminOnly");
 
-adminUsuarios.MapDelete("/{id}", async (RufDbContext db, string id) =>
+adminUsuarios.MapDelete("/{id}", async (
+    RufDbContext db,
+    IConfiguration configuration,
+    ClaimsPrincipal currentUser,
+    string id) =>
 {
+    if (!PuedeEliminarUsuarios(currentUser, configuration))
+    {
+        return Results.Forbid();
+    }
+
     var usuario = await db.Usuarios.FirstOrDefaultAsync(item => item.Id == id);
     if (usuario is null)
     {
@@ -228,7 +243,7 @@ adminUsuarios.MapDelete("/{id}", async (RufDbContext db, string id) =>
     await db.SaveChangesAsync();
 
     return Results.NoContent();
-}).RequireAuthorization("AdminOnly");
+}).RequireAuthorization();
 
 var uploads = app.MapGroup("/api/admin/uploads")
     .WithTags("Admin Uploads")
@@ -948,6 +963,42 @@ static Task<bool> EsUltimoAdminActivoAsync(RufDbContext db, string usuarioId)
         usuario.Activo);
 }
 
+static bool PuedeEliminarUsuarios(ClaimsPrincipal user, IConfiguration configuration)
+{
+    if (user.IsInRole("admin"))
+    {
+        return true;
+    }
+
+    var nombre = NormalizePermissionText(user.FindFirstValue(ClaimTypes.Name) ?? string.Empty);
+    var usuariosHabilitados = configuration
+        .GetSection("Permissions:DeleteUsersAllowedNames")
+        .Get<string[]>()
+        ?.Select(NormalizePermissionText)
+        .ToHashSet(StringComparer.OrdinalIgnoreCase)
+        ?? [];
+
+    return usuariosHabilitados.Contains(nombre);
+}
+
+static string NormalizePermissionText(string value)
+{
+    var normalized = value.Trim().ToLowerInvariant().Normalize(NormalizationForm.FormD);
+    var builder = new StringBuilder();
+
+    foreach (var character in normalized)
+    {
+        if (CharUnicodeInfo.GetUnicodeCategory(character) == UnicodeCategory.NonSpacingMark)
+        {
+            continue;
+        }
+
+        builder.Append(character);
+    }
+
+    return builder.ToString().Normalize(NormalizationForm.FormC);
+}
+
 static CloudinarySettings GetCloudinarySettings(IConfiguration configuration)
 {
     var cloudName = configuration["CLOUDINARY_CLOUD_NAME"]
@@ -1404,7 +1455,10 @@ static async Task SeedCategoriaDataAsync(IServiceProvider services, ILogger logg
     }
 }
 
-static async Task SeedUsuarioDataAsync(IServiceProvider services, ILogger logger)
+static async Task SeedUsuarioDataAsync(
+    IServiceProvider services,
+    IConfiguration configuration,
+    ILogger logger)
 {
     try
     {
@@ -1417,18 +1471,26 @@ static async Task SeedUsuarioDataAsync(IServiceProvider services, ILogger logger
             return;
         }
 
+        var password = configuration["AdminSeed:Password"];
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            logger.LogWarning("AdminSeed:Password no está configurado. Se omite el seed inicial de usuarios.");
+            return;
+        }
+
         var now = DateTime.UtcNow;
         var usuario = new Usuario
         {
             Id = Guid.NewGuid().ToString("N"),
-            Nombre = "admin rüf",
-            Email = "admin@ruf.com",
-            Rol = "admin",
+            Nombre = configuration["AdminSeed:Nombre"] ?? "admin rüf",
+            Email = configuration["AdminSeed:Email"]
+                ?? throw new InvalidOperationException("AdminSeed:Email no está configurado."),
+            Rol = configuration["AdminSeed:Rol"] ?? "admin",
             Activo = true,
             CreatedAt = now,
             UpdatedAt = now
         };
-        usuario.PasswordHash = passwordHasher.HashPassword(usuario, "ruf123");
+        usuario.PasswordHash = passwordHasher.HashPassword(usuario, password);
 
         db.Usuarios.Add(usuario);
         await db.SaveChangesAsync();

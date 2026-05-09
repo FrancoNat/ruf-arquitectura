@@ -1,4 +1,5 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import { API_URL } from "@/config/api";
+
 const TOKEN_KEY = "ruf-admin-token";
 const USER_KEY = "ruf-admin-user";
 

@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { adminCategoriasIniciales } from "@/data/adminCategorias";
+import { useNotifications } from "@/components/ui/NotificationProvider";
 import { getCategorias } from "@/services/categorias";
 import ImageManager from "./ImageManager";
 
 const baseState = {
   titulo: "",
-  categoria: adminCategoriasIniciales[0].id,
+  categoria: "",
   descripcionCorta: "",
   descripcionLarga: "",
   ubicacion: "",
@@ -25,6 +25,7 @@ export default function ProyectoForm({
   onSubmit,
   isSubmitting = false,
 }) {
+  const { error: notifyError } = useNotifications();
   const initialState = useMemo(
     () => ({
       ...baseState,
@@ -90,7 +91,7 @@ export default function ProyectoForm({
   const agregarImagen = (ruta) => {
     setForm((prev) => {
       if (prev.imagenes.includes(ruta)) {
-        alert("esa imagen ya fue agregada");
+        notifyError("esa imagen ya fue agregada");
         return prev;
       }
 

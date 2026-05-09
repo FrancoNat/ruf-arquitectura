@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import TestimonioAdminCard from "@/components/admin/TestimonioAdminCard";
+import { useNotifications } from "@/components/ui/NotificationProvider";
 import {
   deleteTestimonio,
   getAdminTestimonios,
@@ -9,6 +10,7 @@ import {
 } from "@/services/testimonios";
 
 export default function AdminTestimoniosClient() {
+  const { confirmDialog, error: notifyError, success } = useNotifications();
   const [testimonios, setTestimonios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -58,8 +60,9 @@ export default function AdminTestimoniosClient() {
       setTestimonios((prev) =>
         prev.map((item) => (item.id === id ? actualizado : item))
       );
+      success("testimonio actualizado");
     } catch {
-      alert("no pudimos actualizar el testimonio");
+      notifyError("no pudimos actualizar el testimonio");
     } finally {
       setUpdatingId("");
     }
@@ -67,9 +70,11 @@ export default function AdminTestimoniosClient() {
 
   const eliminar = async (id) => {
     const testimonio = testimonios.find((item) => item.id === id);
-    const confirmar = window.confirm(
-      `¿eliminar ${testimonio?.nombre || "este testimonio"}?`
-    );
+    const confirmar = await confirmDialog({
+      title: "eliminar testimonio",
+      message: `¿eliminar ${testimonio?.nombre || "este testimonio"}?`,
+      confirmLabel: "eliminar",
+    });
 
     if (!confirmar) {
       return;
@@ -80,8 +85,9 @@ export default function AdminTestimoniosClient() {
     try {
       await deleteTestimonio(id);
       setTestimonios((prev) => prev.filter((item) => item.id !== id));
+      success("testimonio eliminado");
     } catch {
-      alert("no pudimos eliminar el testimonio");
+      notifyError("no pudimos eliminar el testimonio");
     } finally {
       setDeletingId("");
     }
