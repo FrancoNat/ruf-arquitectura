@@ -241,8 +241,7 @@ uploads.MapPost("/image", async (HttpRequest request, IConfiguration configurati
     {
         "image/jpeg",
         "image/png",
-        "image/webp",
-        "image/svg+xml"
+        "image/webp"
     };
 
     if (!request.HasFormContentType)

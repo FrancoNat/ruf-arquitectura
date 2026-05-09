@@ -71,8 +71,8 @@ export default function TestimonioForm({
 
     try {
       setSubiendoFoto(true);
-      const url = await uploadImage(archivo);
-      setForm((prev) => ({ ...prev, foto: url }));
+      const upload = await uploadImage(archivo);
+      setForm((prev) => ({ ...prev, foto: upload.url }));
       setArchivo(null);
       alert("foto subida");
     } catch (err) {
@@ -149,7 +149,7 @@ export default function TestimonioForm({
             <span>subir foto</span>
             <input
               type="file"
-              accept="image/jpeg,image/png,image/webp,image/svg+xml"
+              accept="image/jpeg,image/png,image/webp"
               onChange={(event) => setArchivo(event.target.files?.[0] || null)}
               className="w-full text-sm text-text/70 file:mr-4 file:rounded-lg file:border-0 file:bg-white file:px-4 file:py-2 file:text-sm file:text-primary"
             />

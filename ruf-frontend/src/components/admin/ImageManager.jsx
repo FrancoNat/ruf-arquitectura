@@ -37,8 +37,8 @@ export default function ImageManager({
 
     try {
       setSubiendo(true);
-      const url = await uploadImage(archivo);
-      onAgregarImagen(url);
+      const upload = await uploadImage(archivo);
+      onAgregarImagen(upload.url);
       setArchivo(null);
       alert("imagen subida");
     } catch (err) {
@@ -61,7 +61,7 @@ export default function ImageManager({
         <div className="flex flex-col gap-3 rounded-xl border border-black/5 bg-background p-4 sm:flex-row sm:items-center">
           <input
             type="file"
-            accept="image/jpeg,image/png,image/webp,image/svg+xml"
+            accept="image/jpeg,image/png,image/webp"
             onChange={(event) => setArchivo(event.target.files?.[0] || null)}
             className="w-full text-sm text-text/70 file:mr-4 file:rounded-lg file:border-0 file:bg-white file:px-4 file:py-2 file:text-sm file:text-primary"
           />

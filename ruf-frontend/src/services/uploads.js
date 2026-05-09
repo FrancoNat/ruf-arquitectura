@@ -31,6 +31,5 @@ export async function uploadImage(file) {
     throw error;
   }
 
-  const data = await res.json();
-  return data.url;
+  return res.json();
 }
