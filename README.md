@@ -240,3 +240,7 @@ Para producción:
 - Cloudinary integrado para uploads.
 - Auth real con JWT.
 - User secrets configurado para desarrollo local.
+
+
+
+Gracias por ver, Franco.
