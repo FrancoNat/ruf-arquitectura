@@ -46,13 +46,12 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy(FrontendCorsPolicy, policy =>
     {
-        var allowedOrigins = builder.Configuration
-            .GetSection("Cors:AllowedOrigins")
-            .Get<string[]>()
-            ?? ["http://localhost:3000", "http://127.0.0.1:3000"];
-
         policy
-            .WithOrigins(allowedOrigins)
+            .WithOrigins(
+                "http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://ruf-arquitectura.vercel.app"
+            )
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
