@@ -55,9 +55,13 @@ export default function AdminCalendar({
   setCurrentMonth,
   reuniones,
   bloqueos,
+  multiSelectMode = false,
+  selectedDateKeys = [],
+  onToggleDateKey,
 }) {
   const today = new Date();
   const days = buildCalendarDays(currentMonth);
+  const selectedKeys = new Set(selectedDateKeys);
 
   const goToPreviousMonth = () => {
     setCurrentMonth(
@@ -126,38 +130,60 @@ export default function AdminCalendar({
           ).length;
 
           const selected = isSameDate(date, selectedDate);
+          const selectedForMulti = selectedKeys.has(dateKey);
           const isToday = isSameDate(date, today);
+          const statusClass =
+            bloqueosCount > 0
+              ? "border-rose-200 bg-rose-50/70 hover:border-rose-300 hover:bg-rose-50"
+              : reunionesCount > 0
+              ? "border-emerald-200 bg-emerald-50/70 hover:border-emerald-300 hover:bg-emerald-50"
+              : "border-black/5 bg-background/40 hover:border-primary/30 hover:bg-background";
 
           return (
             <button
               key={dateKey}
               type="button"
-              onClick={() => onSelectDate(date)}
+              onClick={() => {
+                if (multiSelectMode) {
+                  onToggleDateKey?.(dateKey);
+                  return;
+                }
+
+                onSelectDate(date);
+              }}
               className={`min-h-24 rounded-xl border p-3 text-left transition ${
-                selected
+                selectedForMulti
+                  ? "border-primary bg-primary text-white"
+                : selected
                   ? "border-primary bg-background"
-                  : "border-black/5 bg-background/40 hover:border-primary/30 hover:bg-background"
+                  : statusClass
               } ${isToday ? "ring-1 ring-primary/30" : ""}`}
             >
               <div className="flex items-start justify-between gap-2">
-                <span className="text-sm text-primary">{date.getDate()}</span>
-                {isToday ? (
-                  <span className="rounded-full bg-primary px-2 py-1 text-[10px] text-white">
-                    hoy
-                  </span>
-                ) : null}
+                <span className={`text-sm ${selectedForMulti ? "text-white" : "text-primary"}`}>
+                  {date.getDate()}
+                </span>
+                <div className="flex items-center gap-1.5">
+                  {isToday ? (
+                    <span className={`rounded-full px-2 py-1 text-[10px] ${
+                      selectedForMulti
+                        ? "bg-white/20 text-white"
+                        : "bg-primary text-white"
+                    }`}>
+                      hoy
+                    </span>
+                  ) : null}
+                </div>
               </div>
 
               <div className="mt-4 space-y-2">
                 {reunionesCount > 0 ? (
-                  <div className="rounded-lg bg-white px-2 py-1 text-[11px] text-text/70">
+                  <div className={`rounded-lg px-2 py-1 text-[11px] ${
+                    selectedForMulti
+                      ? "bg-white/15 text-white"
+                      : "bg-white text-text/70"
+                  }`}>
                     reuniones: {reunionesCount}
-                  </div>
-                ) : null}
-
-                {bloqueosCount > 0 ? (
-                  <div className="rounded-lg bg-rose-50 px-2 py-1 text-[11px] text-rose-700">
-                    bloqueos: {bloqueosCount}
                   </div>
                 ) : null}
               </div>

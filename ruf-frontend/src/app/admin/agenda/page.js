@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import AdminCalendar from "@/components/admin/AdminCalendar";
 import DayDetailPanel from "@/components/admin/DayDetailPanel";
+import DayDisablePanel from "@/components/admin/DayDisablePanel";
 import PendingReunionesList from "@/components/admin/PendingReunionesList";
 import { useNotifications } from "@/components/ui/NotificationProvider";
 import {
@@ -28,6 +29,22 @@ function parseDateKey(fecha) {
   return new Date(year, month - 1, day);
 }
 
+function getDateRangeKeys(desde, hasta) {
+  const inicio = parseDateKey(desde);
+  const fin = parseDateKey(hasta);
+  const start = inicio <= fin ? inicio : fin;
+  const end = inicio <= fin ? fin : inicio;
+  const keys = [];
+  const cursor = new Date(start);
+
+  while (cursor <= end) {
+    keys.push(formatDateKey(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return keys;
+}
+
 export default function AdminAgendaPage() {
   const { error: notifyError, success, promptDialog } = useNotifications();
   const today = useMemo(() => new Date(), []);
@@ -36,6 +53,9 @@ export default function AdminAgendaPage() {
   const [horariosBase, setHorariosBase] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [daySelectionMode, setDaySelectionMode] = useState(false);
+  const [selectedDayKeys, setSelectedDayKeys] = useState([]);
+  const [savingDays, setSavingDays] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(
     () => new Date(today.getFullYear(), today.getMonth(), 1)
   );
@@ -121,6 +141,19 @@ export default function AdminAgendaPage() {
     [selectedDateKey, reuniones, bloqueos, horariosBase]
   );
 
+  const toggleDayKey = (dateKey) => {
+    setSelectedDayKeys((prev) =>
+      prev.includes(dateKey)
+        ? prev.filter((item) => item !== dateKey)
+        : [...prev, dateKey].sort()
+    );
+  };
+
+  const agregarRangoDias = useCallback((desde, hasta) => {
+    const keys = getDateRangeKeys(desde, hasta);
+    setSelectedDayKeys((prev) => [...new Set([...prev, ...keys])].sort());
+  }, []);
+
   const confirmarReunion = async (id) => {
     try {
       const reunionActualizada = await updateEstadoReunion(id, "confirmada");
@@ -191,6 +224,98 @@ export default function AdminAgendaPage() {
     }
   };
 
+  const desactivarDias = async () => {
+    if (selectedDayKeys.length === 0) {
+      notifyError("seleccioná al menos un día");
+      return false;
+    }
+
+    const bloqueosExistentes = new Set(
+      bloqueos.map((bloqueo) => `${bloqueo.fecha}-${bloqueo.hora}`)
+    );
+    const horariosOcupadosPorReunion = new Set(
+      reuniones
+        .filter(
+          (reunion) =>
+            selectedDayKeys.includes(reunion.fecha) &&
+            (reunion.estado === "pendiente" || reunion.estado === "confirmada")
+        )
+        .map((reunion) => `${reunion.fecha}-${reunion.hora}`)
+    );
+
+    const bloqueosACrear = selectedDayKeys.flatMap((fecha) =>
+      horariosBase
+        .filter(
+          (hora) =>
+            !bloqueosExistentes.has(`${fecha}-${hora}`) &&
+            !horariosOcupadosPorReunion.has(`${fecha}-${hora}`)
+        )
+        .map((hora) => ({ fecha, hora, motivo: "día desactivado" }))
+    );
+
+    if (bloqueosACrear.length === 0) {
+      notifyError("no quedan horarios disponibles para bloquear en esos días");
+      return false;
+    }
+
+    try {
+      setSavingDays(true);
+      const nuevosBloqueos = await Promise.all(
+        bloqueosACrear.map((bloqueo) => createBloqueo(bloqueo))
+      );
+      setBloqueos((prev) => [...prev, ...nuevosBloqueos]);
+      setSelectedDayKeys([]);
+      setDaySelectionMode(false);
+      success("día(s) desactivado(s)");
+      return true;
+    } catch {
+      notifyError("no pudimos desactivar los días seleccionados");
+      return false;
+    } finally {
+      setSavingDays(false);
+    }
+  };
+
+  const desbloquearDias = async () => {
+    if (selectedDayKeys.length === 0) {
+      notifyError("seleccioná al menos un día");
+      return false;
+    }
+
+    const bloqueosDeDias = bloqueos.filter(
+      (bloqueo) =>
+        selectedDayKeys.includes(bloqueo.fecha) &&
+        bloqueo.motivo === "día desactivado"
+    );
+
+    if (bloqueosDeDias.length === 0) {
+      notifyError("no hay días desactivados para desbloquear en la selección");
+      return false;
+    }
+
+    try {
+      setSavingDays(true);
+      await Promise.all(
+        bloqueosDeDias.map((bloqueo) => deleteBloqueo(bloqueo.id))
+      );
+      setBloqueos((prev) =>
+        prev.filter(
+          (bloqueo) =>
+            !bloqueosDeDias.some((item) => item.id === bloqueo.id)
+        )
+      );
+      setSelectedDayKeys([]);
+      setDaySelectionMode(false);
+      success("día(s) desbloqueado(s)");
+      return true;
+    } catch {
+      notifyError("no pudimos desbloquear los días seleccionados");
+      return false;
+    } finally {
+      setSavingDays(false);
+    }
+  };
+
   const seleccionarFecha = (fecha) => {
     const nuevaFecha = parseDateKey(fecha);
     setSelectedDate(nuevaFecha);
@@ -227,6 +352,9 @@ export default function AdminAgendaPage() {
             setCurrentMonth={setCurrentMonth}
             reuniones={reuniones}
             bloqueos={bloqueos}
+            multiSelectMode={daySelectionMode}
+            selectedDateKeys={selectedDayKeys}
+            onToggleDateKey={toggleDayKey}
           />
 
           <DayDetailPanel
@@ -240,6 +368,16 @@ export default function AdminAgendaPage() {
             onEliminarReunion={eliminarReunion}
             onBloquearHorario={bloquearHorario}
             onLiberarHorario={liberarHorario}
+          />
+
+          <DayDisablePanel
+            selectionMode={daySelectionMode}
+            selectedDates={selectedDayKeys}
+            saving={savingDays}
+            onToggleSelectionMode={() => setDaySelectionMode((prev) => !prev)}
+            onAddRange={agregarRangoDias}
+            onSave={desactivarDias}
+            onUnlock={desbloquearDias}
           />
         </>
       )}

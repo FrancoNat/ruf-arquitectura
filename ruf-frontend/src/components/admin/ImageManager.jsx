@@ -15,21 +15,8 @@ export default function ImageManager({
   onMoverImagenAbajo,
 }) {
   const { error: notifyError, success } = useNotifications();
-  const [nuevaImagen, setNuevaImagen] = useState("");
   const [archivo, setArchivo] = useState(null);
   const [subiendo, setSubiendo] = useState(false);
-
-  const handleAgregar = () => {
-    const ruta = nuevaImagen.trim();
-
-    if (!ruta) {
-      notifyError("completa una ruta de imagen");
-      return;
-    }
-
-    onAgregarImagen(ruta);
-    setNuevaImagen("");
-  };
 
   const handleUpload = async () => {
     if (!archivo) {
@@ -56,7 +43,7 @@ export default function ImageManager({
         <div>
           <p className="text-sm text-text/80">galería de imágenes</p>
           <p className="mt-1 text-xs leading-relaxed text-text/55">
-            subí imágenes reales o agregá rutas manuales, elegí una principal y ordená la secuencia.
+            subí imágenes reales, elegí una principal y ordená la secuencia.
           </p>
         </div>
 
@@ -78,23 +65,6 @@ export default function ImageManager({
           </button>
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <input
-            type="text"
-            value={nuevaImagen}
-            onChange={(event) => setNuevaImagen(event.target.value)}
-            placeholder="/images/proyectos/departamento.jpg"
-            className="w-full rounded-xl border border-black/10 bg-background px-4 py-3 text-sm outline-none transition focus:border-primary"
-          />
-
-          <button
-            type="button"
-            onClick={handleAgregar}
-            className="rounded-xl bg-primary px-5 py-3 text-sm text-white transition hover:opacity-85"
-          >
-            agregar imagen
-          </button>
-        </div>
       </div>
 
       <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

@@ -2,18 +2,12 @@
 
 import { useEffect, useState } from "react";
 import ProyectoAdminCard from "@/components/admin/ProyectoAdminCard";
-import { useNotifications } from "@/components/ui/NotificationProvider";
-import {
-  deleteProyecto,
-  getAdminProyectos,
-} from "@/services/proyectos";
+import { getAdminProyectos } from "@/services/proyectos";
 
 export default function AdminProyectosClient() {
-  const { confirmDialog, error: notifyError, success } = useNotifications();
   const [proyectos, setProyectos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [deletingId, setDeletingId] = useState("");
 
   useEffect(() => {
     let activo = true;
@@ -38,31 +32,6 @@ export default function AdminProyectosClient() {
       activo = false;
     };
   }, []);
-
-  const handleDelete = async (id) => {
-    const proyecto = proyectos.find((item) => item.id === id);
-    const confirmar = await confirmDialog({
-      title: "eliminar proyecto",
-      message: `¿eliminar ${proyecto?.titulo || "este proyecto"}?`,
-      confirmLabel: "eliminar",
-    });
-
-    if (!confirmar) {
-      return;
-    }
-
-    setDeletingId(id);
-
-    try {
-      await deleteProyecto(id);
-      setProyectos((prev) => prev.filter((item) => item.id !== id));
-      success("proyecto eliminado");
-    } catch {
-      notifyError("no pudimos eliminar el proyecto");
-    } finally {
-      setDeletingId("");
-    }
-  };
 
   if (loading) {
     return (
@@ -94,8 +63,6 @@ export default function AdminProyectosClient() {
         <ProyectoAdminCard
           key={proyecto.id}
           proyecto={proyecto}
-          deleting={deletingId === proyecto.id}
-          onDelete={handleDelete}
         />
       ))}
     </div>

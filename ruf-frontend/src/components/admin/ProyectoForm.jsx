@@ -24,6 +24,7 @@ export default function ProyectoForm({
   mode = "nuevo",
   onSubmit,
   isSubmitting = false,
+  secondaryAction = null,
 }) {
   const { error: notifyError } = useNotifications();
   const initialState = useMemo(
@@ -296,18 +297,6 @@ export default function ProyectoForm({
             </select>
           </label>
 
-          <label className="space-y-2 text-sm text-text/80 md:col-span-2">
-            <span>imagen principal</span>
-            <input
-              type="text"
-              name="imagenPrincipal"
-              value={form.imagenPrincipal}
-              onChange={handleChange}
-              placeholder="/images/proyectos/..."
-              className="w-full rounded-xl border border-black/10 bg-background px-4 py-3 outline-none transition focus:border-primary"
-            />
-          </label>
-
           <label className="flex items-center gap-3 rounded-xl border border-black/10 bg-background px-4 py-3 text-sm text-text/80 md:col-span-2">
             <input
               type="checkbox"
@@ -331,14 +320,17 @@ export default function ProyectoForm({
         onMoverImagenAbajo={moverImagenAbajo}
       />
 
-      <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm sm:p-6">
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="rounded-xl bg-primary px-5 py-3 text-sm text-white transition hover:opacity-85"
-        >
-          {isSubmitting ? "guardando..." : "guardar proyecto"}
-        </button>
+      <div className="rounded-2xl border border-black/5 bg-white p-4 shadow-sm sm:p-6">
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="rounded-full bg-primary px-4 py-2 text-sm text-white transition hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-55 sm:rounded-xl sm:px-5 sm:py-3"
+          >
+            {isSubmitting ? "guardando..." : "guardar proyecto"}
+          </button>
+          {secondaryAction}
+        </div>
       </div>
     </form>
   );

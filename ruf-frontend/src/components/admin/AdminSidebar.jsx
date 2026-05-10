@@ -62,15 +62,19 @@ export default function AdminSidebar() {
         ) : null}
       </header>
 
-      <aside className="hidden rounded-2xl border border-black/5 bg-white p-5 shadow-sm lg:block">
-        <Image
-          src="/images/logos/Logo marron png.png"
-          alt="rüf arquitectura"
-          width={160}
-          height={64}
-          className="mx-auto h-10 w-auto"
-        />
+      <header className="fixed left-0 right-0 top-0 z-50 hidden border-b border-black/5 bg-[#f8f4ef]/92 px-6 py-4 shadow-[0_10px_30px_rgba(44,32,24,0.05)] backdrop-blur-md lg:block">
+        <div className="mx-auto flex max-w-7xl justify-center">
+          <Image
+            src="/images/logos/Logo marron png.png"
+            alt="rüf arquitectura"
+            width={170}
+            height={68}
+            className="h-11 w-auto"
+          />
+        </div>
+      </header>
 
+      <aside className="hidden rounded-2xl border border-black/5 bg-white p-5 shadow-sm lg:block">
         <AdminNav usuario={usuario} onLogout={cerrarSesion} />
       </aside>
     </>
