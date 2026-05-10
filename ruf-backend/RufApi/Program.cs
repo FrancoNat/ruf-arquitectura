@@ -72,6 +72,10 @@ if (app.Environment.IsDevelopment())
     await SeedUsuarioDataAsync(app.Services, app.Configuration, app.Logger);
     await SeedAgendaDataAsync(app.Services, app.Logger);
 }
+if (app.Environment.IsProduction())
+{
+    await SeedUsuarioDataAsync(app.Services, app.Configuration, app.Logger);
+}
 
 app.UseCors(FrontendCorsPolicy);
 app.UseAuthentication();
