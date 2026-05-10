@@ -270,9 +270,7 @@ uploads.MapPost("/image", async (HttpRequest request, IConfiguration configurati
     var allowedTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         "image/jpeg",
-        "image/png",
-        "image/webp",
-        "image/avif"
+        "image/png"
     };
 
     if (!request.HasFormContentType)
@@ -292,7 +290,7 @@ uploads.MapPost("/image", async (HttpRequest request, IConfiguration configurati
     {
         return Results.BadRequest(new
         {
-            error = "tipo de imagen inválido. Subí una imagen JPG, PNG, WEBP o AVIF.",
+            error = "tipo de imagen inválido. Subí una imagen JPG o PNG.",
             detail = $"tipo recibido: {file.ContentType}"
         });
     }
@@ -336,9 +334,11 @@ uploads.MapPost("/image", async (HttpRequest request, IConfiguration configurati
     catch (Exception ex)
     {
         logger.LogError(ex, "falló la subida a cloudinary");
-        return Results.Problem(
-            "no pudimos subir la imagen. Revisá que no supere 10 MB ni 25 megapíxeles, y que sea JPG, PNG, WEBP o AVIF.",
-            statusCode: StatusCodes.Status500InternalServerError);
+        return Results.BadRequest(new
+        {
+            error = "no pudimos subir la imagen. Subí una imagen JPG o PNG.",
+            detail = ex.Message
+        });
     }
 })
 .DisableAntiforgery();
