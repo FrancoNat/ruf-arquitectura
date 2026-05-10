@@ -3,17 +3,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination, Autoplay } from "swiper/modules";
+import { Pagination, Autoplay } from "swiper/modules";
 
 import "swiper/css";
-import "swiper/css/navigation";
 import "swiper/css/pagination";
 
 export default function ProyectosDestacadosCarousel({ proyectos }) {
   return (
     <Swiper
-      modules={[Navigation, Pagination, Autoplay]}
-      navigation
+      modules={[Pagination, Autoplay]}
       pagination={{ clickable: true }}
       autoplay={{ delay: 3500 }}
       loop
@@ -23,12 +21,15 @@ export default function ProyectosDestacadosCarousel({ proyectos }) {
         768: { slidesPerView: 2 },
         1024: { slidesPerView: 3 },
       }}
-      className="pb-12"
+      className="ruf-swiper !pb-16"
     >
       {proyectos.map((proyecto) => (
         <SwiperSlide key={proyecto.id} className="h-auto">
-          <article className="flex h-full flex-col overflow-hidden rounded-xl border border-black/5 bg-white shadow-sm">
-            <Link href={`/proyectos/${proyecto.id}`} className="group block">
+          <Link
+            href={`/proyectos/${proyecto.id}`}
+            className="group block h-full"
+          >
+            <article className="flex h-full flex-col overflow-hidden rounded-xl border border-black/5 bg-white shadow-sm">
               <div className="relative h-72 w-full overflow-hidden sm:h-80 md:h-64">
                 <Image
                   src={proyecto.imagen}
@@ -38,51 +39,15 @@ export default function ProyectosDestacadosCarousel({ proyectos }) {
                   className="object-cover transition duration-500 group-hover:scale-105"
                 />
               </div>
-            </Link>
 
-            <div className="flex flex-1 flex-col p-5">
-              <div className="min-h-[132px]">
+              <div className="p-5">
                 <p className="text-xs uppercase tracking-[0.18em] text-primary/60">
                   {proyecto.categoria}
                 </p>
-                <h3 className="mt-2 text-lg text-primary">
-                  {proyecto.titulo}
-                </h3>
-                {proyecto.descripcionCorta ? (
-                  <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-text/65">
-                    {proyecto.descripcionCorta}
-                  </p>
-                ) : null}
+                <h3 className="mt-2 text-lg text-primary">{proyecto.titulo}</h3>
               </div>
-
-              <div className="mt-4 grid min-h-[72px] grid-cols-2 gap-2 text-xs text-text/60">
-                {proyecto.ubicacion ? (
-                  <span className="line-clamp-2 rounded-lg bg-background px-3 py-2">
-                    {proyecto.ubicacion}
-                  </span>
-                ) : null}
-                {proyecto.anio ? (
-                  <span className="rounded-lg bg-background px-3 py-2">
-                    {proyecto.anio}
-                  </span>
-                ) : null}
-                {proyecto.superficie ? (
-                  <span className="rounded-lg bg-background px-3 py-2">
-                    {proyecto.superficie}
-                  </span>
-                ) : null}
-              </div>
-
-              <div className="mt-auto pt-5">
-                <Link
-                  href={`/proyectos/${proyecto.id}`}
-                  className="inline-flex w-fit rounded-lg border border-primary px-4 py-2 text-sm text-primary transition hover:bg-primary hover:text-white"
-                >
-                  ver proyecto
-                </Link>
-              </div>
-            </div>
-          </article>
+            </article>
+          </Link>
         </SwiperSlide>
       ))}
     </Swiper>

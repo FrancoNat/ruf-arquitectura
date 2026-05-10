@@ -822,12 +822,6 @@ agenda.MapGet("/bloqueos", async (RufDbContext db, DateOnly? fecha) =>
 
 agenda.MapPost("/bloqueos", async (RufDbContext db, BloqueoRequest request) =>
 {
-    var validationError = ValidateBloqueoRequest(request);
-    if (validationError is not null)
-    {
-        return Results.BadRequest(new { error = validationError });
-    }
-
     if (!await HorarioBaseActivoExisteAsync(db, request.Hora))
     {
         return Results.BadRequest(new { error = "El horario elegido no existe en la agenda base." });
@@ -844,7 +838,9 @@ agenda.MapPost("/bloqueos", async (RufDbContext db, BloqueoRequest request) =>
         Id = $"b{Guid.NewGuid().ToString("N")[..8]}",
         Fecha = request.Fecha,
         Hora = request.Hora,
-        Motivo = request.Motivo.Trim(),
+        Motivo = string.IsNullOrWhiteSpace(request.Motivo)
+            ? "bloqueo manual"
+            : request.Motivo.Trim(),
         CreatedAt = now,
         UpdatedAt = now
     };
@@ -1063,16 +1059,6 @@ static string? ValidateReunionRequest(ReunionRequest request)
     if (string.IsNullOrWhiteSpace(request.TipoProyecto))
     {
         return "El tipo de proyecto es requerido.";
-    }
-
-    return null;
-}
-
-static string? ValidateBloqueoRequest(BloqueoRequest request)
-{
-    if (string.IsNullOrWhiteSpace(request.Motivo))
-    {
-        return "El motivo es requerido.";
     }
 
     return null;

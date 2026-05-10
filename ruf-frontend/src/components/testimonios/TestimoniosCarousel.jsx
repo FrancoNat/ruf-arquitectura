@@ -20,17 +20,17 @@ export default function TestimoniosCarousel({ testimonios }) {
         768: { slidesPerView: 2 },
         1024: { slidesPerView: 3 },
       }}
-      className="pb-12"
+      className="ruf-swiper !pb-16"
     >
       {testimonios.map((testimonio) => (
         <SwiperSlide key={testimonio.id} className="h-auto">
           <div className="group overflow-hidden rounded-xl">
-            <div className="flex h-[260px] flex-col justify-between rounded-xl bg-primary p-6 shadow-sm transition duration-500 group-hover:scale-105">
-              <div className="mb-4 text-background">
+            <div className="flex min-h-[210px] flex-col justify-between rounded-xl bg-primary p-5 shadow-sm transition duration-500 group-hover:scale-105 sm:h-[260px] sm:p-6">
+              <div className="mb-3 text-sm text-background sm:mb-4 sm:text-base">
                 {"⭐".repeat(testimonio.estrellas)}
               </div>
 
-              <p className="mb-6 leading-relaxed text-background">
+              <p className="mb-5 line-clamp-4 text-sm leading-relaxed text-background sm:mb-6 sm:text-base">
                 “{testimonio.texto}”
               </p>
 
@@ -40,7 +40,7 @@ export default function TestimoniosCarousel({ testimonios }) {
                   alt={testimonio.nombre}
                   width={40}
                   height={40}
-                  className="h-10 w-10 rounded-full object-cover"
+                  className="h-9 w-9 rounded-full object-cover sm:h-10 sm:w-10"
                 />
 
                 <div>

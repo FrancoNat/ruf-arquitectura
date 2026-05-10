@@ -46,21 +46,21 @@ export default function DashboardStats() {
   }, []);
 
   return (
-    <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="grid grid-cols-3 gap-3 sm:gap-5">
       <AdminCard
         titulo="proyectos"
         valor={stats.proyectos}
-        descripcion="proyectos cargados en el panel admin."
+        className="min-w-0"
       />
       <AdminCard
         titulo="reseñas"
         valor={stats.resenas}
-        descripcion="testimonios disponibles para mostrar en el sitio."
+        className="min-w-0"
       />
       <AdminCard
         titulo="reuniones"
         valor={stats.reuniones}
-        descripcion="solicitudes recientes generadas desde agenda."
+        className="min-w-0"
       />
 
       {error ? (

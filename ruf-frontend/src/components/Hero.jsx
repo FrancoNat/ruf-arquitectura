@@ -25,17 +25,17 @@ export default function Hero() {
           medida.
         </p>
 
-        <div className="flex w-full max-w-sm flex-col gap-3 sm:mx-auto sm:w-auto sm:max-w-none sm:flex-row sm:justify-center">
+        <div className="flex flex-wrap justify-center gap-3">
           <a
             href="#proyectos"
-            className="rounded-lg bg-primary px-6 py-3 text-center transition hover:opacity-80"
+            className="rounded-full bg-primary px-5 py-2.5 text-sm text-white transition hover:opacity-80 sm:rounded-lg sm:px-6 sm:py-3 sm:text-base"
           >
             ver proyectos
           </a>
 
           <a
             href="/agenda"
-            className="rounded-lg border border-white px-6 py-3 text-center transition hover:bg-white hover:text-black"
+            className="rounded-full border border-white/80 px-5 py-2.5 text-sm text-white transition hover:bg-white hover:text-black sm:rounded-lg sm:px-6 sm:py-3 sm:text-base"
           >
             agendar reunión
           </a>

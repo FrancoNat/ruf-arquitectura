@@ -6,10 +6,9 @@ import { Fancybox } from "@fancyapps/ui";
 import { useEffect } from "react";
 import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination, Autoplay } from "swiper/modules";
+import { Pagination, Autoplay } from "swiper/modules";
 
 import "swiper/css";
-import "swiper/css/navigation";
 import "swiper/css/pagination";
 
 export default function ProyectoDetalleClient({ proyecto }) {
@@ -39,12 +38,11 @@ export default function ProyectoDetalleClient({ proyecto }) {
       </div>
 
       <Swiper
-        modules={[Navigation, Pagination, Autoplay]}
-        navigation
+        modules={[Pagination, Autoplay]}
         pagination={{ clickable: true }}
         autoplay={{ delay: 3000 }}
         loop
-        className="mb-10"
+        className="ruf-swiper ruf-swiper-gallery mb-10 !pb-16"
       >
         {proyecto.imagenes.map((img, index) => (
           <SwiperSlide key={img}>
@@ -90,17 +88,17 @@ export default function ProyectoDetalleClient({ proyecto }) {
         </aside>
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row">
+      <div className="flex flex-wrap justify-center gap-3 sm:justify-start">
         <Link
           href="/proyectos"
-          className="inline-flex rounded-lg border border-primary px-6 py-3 text-primary transition hover:bg-primary hover:text-white"
+          className="inline-flex rounded-full border border-primary/25 px-4 py-2 text-sm text-primary transition hover:bg-primary hover:text-white sm:rounded-lg sm:px-6 sm:py-3 sm:text-base"
         >
           ver todos los proyectos
         </Link>
 
         <a
           href="/agenda"
-          className="inline-flex rounded-lg bg-primary px-6 py-3 text-white transition hover:opacity-80"
+          className="inline-flex rounded-full bg-primary px-4 py-2 text-sm text-white transition hover:opacity-80 sm:rounded-lg sm:px-6 sm:py-3 sm:text-base"
         >
           agendar reunión
         </a>

@@ -30,3 +30,41 @@ body {
   color: var(--foreground);
   font-family: var(--app-font-sans);
 }
+
+.ruf-swiper {
+  --swiper-theme-color: var(--primary);
+  --swiper-pagination-color: var(--primary);
+  --swiper-pagination-bullet-inactive-color: rgba(75, 58, 51, 0.28);
+  --swiper-pagination-bullet-inactive-opacity: 1;
+}
+
+.ruf-swiper .swiper-pagination {
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.ruf-swiper .swiper-pagination-bullet {
+  width: 7px;
+  height: 7px;
+  margin: 0;
+  border-radius: 999px;
+  background: rgba(75, 58, 51, 0.3);
+  opacity: 1;
+  transition:
+    width 180ms ease,
+    background-color 180ms ease,
+    transform 180ms ease;
+}
+
+.ruf-swiper .swiper-pagination-bullet-active {
+  width: 28px;
+  background: var(--primary);
+}
+
+.ruf-swiper .swiper-pagination-bullet:focus-visible {
+  outline: 2px solid rgba(75, 58, 51, 0.45);
+  outline-offset: 4px;
+}

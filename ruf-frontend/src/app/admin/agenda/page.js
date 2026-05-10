@@ -164,18 +164,15 @@ export default function AdminAgendaPage() {
       title: "bloquear horario",
       message: `indicá el motivo para bloquear el horario ${hora}`,
       label: "motivo del bloqueo",
+      placeholder: "opcional",
       confirmLabel: "bloquear",
     });
-
-    if (!motivo) {
-      return;
-    }
 
     try {
       const nuevoBloqueo = await createBloqueo({
         fecha: selectedDateKey,
         hora,
-        motivo,
+        motivo: motivo || "bloqueo manual",
       });
       setBloqueos((prev) => [...prev, nuevoBloqueo]);
       success("horario bloqueado");

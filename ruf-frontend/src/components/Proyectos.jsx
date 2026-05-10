@@ -15,7 +15,7 @@ export default async function Proyectos() {
   return (
     <section id="proyectos" className="bg-background py-20 sm:py-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="mb-8 flex flex-col gap-4 sm:mb-10 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mb-8 sm:mb-10">
           <div>
             <h2 className="mb-2 text-3xl text-primary">proyectos destacados</h2>
 
@@ -23,13 +23,6 @@ export default async function Proyectos() {
               cada proyecto es único, diseñado a medida
             </p>
           </div>
-
-          <Link
-            href="/proyectos"
-            className="w-full rounded-lg border border-primary px-5 py-3 text-center text-primary transition hover:bg-primary hover:text-white sm:w-auto sm:shrink-0"
-          >
-            ver todos los proyectos
-          </Link>
         </div>
 
         {error ? (
@@ -39,6 +32,15 @@ export default async function Proyectos() {
         ) : (
           <ProyectosDestacadosCarousel proyectos={proyectos} />
         )}
+
+        <div className="mt-2 flex justify-center sm:mt-4">
+          <Link
+            href="/proyectos"
+            className="inline-flex rounded-full border border-primary/25 px-4 py-2 text-sm text-primary transition hover:bg-primary hover:text-white sm:px-5 sm:py-3"
+          >
+            ver todos los proyectos
+          </Link>
+        </div>
       </div>
     </section>
   );
