@@ -5,6 +5,7 @@ using System.Text;
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -16,10 +17,21 @@ var builder = WebApplication.CreateBuilder(args);
 
 const string FrontendCorsPolicy = "FrontendCorsPolicy";
 
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = null;
+});
+
 builder.Services.AddSingleton<InMemoryDatabase>();
 builder.Services.AddDbContext<RufDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<PasswordHasher<Usuario>>();
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = long.MaxValue;
+    options.ValueLengthLimit = int.MaxValue;
+    options.MultipartHeadersLengthLimit = int.MaxValue;
+});
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -254,7 +266,6 @@ var uploads = app.MapGroup("/api/admin/uploads")
 
 uploads.MapPost("/image", async (HttpRequest request, IConfiguration configuration, ILogger<Program> logger) =>
 {
-    const long maxFileSize = 10 * 1024 * 1024;
     var allowedTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         "image/jpeg",
@@ -278,11 +289,6 @@ uploads.MapPost("/image", async (HttpRequest request, IConfiguration configurati
     if (!allowedTypes.Contains(file.ContentType))
     {
         return Results.BadRequest(new { error = "tipo de imagen inválido" });
-    }
-
-    if (file.Length > maxFileSize)
-    {
-        return Results.BadRequest(new { error = "la imagen supera el tamaño máximo permitido" });
     }
 
     var settings = GetCloudinarySettings(configuration);

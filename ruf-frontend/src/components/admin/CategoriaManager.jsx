@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   createCategoria,
   deleteCategoria,
@@ -19,6 +19,16 @@ export default function CategoriaManager() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const limpiarEdicion = useCallback(() => {
+    setEditandoId(null);
+    setNombreEditado("");
+  }, []);
+
+  const cerrarCategoriaAbierta = useCallback(() => {
+    setCategoriaAbiertaId(null);
+    limpiarEdicion();
+  }, [limpiarEdicion]);
 
   useEffect(() => {
     let activo = true;
@@ -45,6 +55,26 @@ export default function CategoriaManager() {
       activo = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!categoriaAbiertaId) {
+      return;
+    }
+
+    const cerrarSiClickAfuera = (event) => {
+      if (event.target instanceof Element && event.target.closest("[data-categoria-menu-root]")) {
+        return;
+      }
+
+      cerrarCategoriaAbierta();
+    };
+
+    document.addEventListener("pointerdown", cerrarSiClickAfuera);
+
+    return () => {
+      document.removeEventListener("pointerdown", cerrarSiClickAfuera);
+    };
+  }, [categoriaAbiertaId, cerrarCategoriaAbierta]);
 
   const agregarCategoria = async () => {
     const nombre = nuevaCategoria.trim();
@@ -80,8 +110,7 @@ export default function CategoriaManager() {
   };
 
   const cancelarEdicion = () => {
-    setEditandoId(null);
-    setNombreEditado("");
+    cerrarCategoriaAbierta();
   };
 
   const guardarEdicion = async (id) => {
@@ -102,8 +131,7 @@ export default function CategoriaManager() {
           )
           .sort(ordenarPorNombre)
       );
-      cancelarEdicion();
-      setCategoriaAbiertaId(id);
+      cerrarCategoriaAbierta();
       success("categoría actualizada");
     } catch (err) {
       if (err.status === 409) {
@@ -192,6 +220,7 @@ export default function CategoriaManager() {
           {categorias.map((categoria) => (
             <div
               key={categoria.id}
+              data-categoria-menu-root
               className="relative"
             >
               <button
@@ -200,7 +229,7 @@ export default function CategoriaManager() {
                   setCategoriaAbiertaId((prev) =>
                     prev === categoria.id ? null : categoria.id
                   );
-                  cancelarEdicion();
+                  limpiarEdicion();
                 }}
                 className={`w-full truncate rounded-xl border px-4 py-3 text-left text-sm transition ${
                   categoriaAbiertaId === categoria.id

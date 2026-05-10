@@ -15,21 +15,45 @@ export default function ImageManager({
   onMoverImagenAbajo,
 }) {
   const { error: notifyError, success } = useNotifications();
-  const [archivo, setArchivo] = useState(null);
+  const [archivos, setArchivos] = useState([]);
+  const [inputKey, setInputKey] = useState(0);
   const [subiendo, setSubiendo] = useState(false);
 
   const handleUpload = async () => {
-    if (!archivo) {
-      notifyError("seleccioná una imagen");
+    if (archivos.length === 0) {
+      notifyError("seleccioná una o más imágenes");
       return;
     }
 
     try {
       setSubiendo(true);
-      const upload = await uploadImage(archivo);
-      onAgregarImagen(upload.url);
-      setArchivo(null);
-      success("imagen subida");
+      const resultados = await Promise.allSettled(
+        archivos.map((archivo) => uploadImage(archivo))
+      );
+      const subidas = resultados
+        .filter((resultado) => resultado.status === "fulfilled")
+        .map((resultado) => resultado.value);
+      const fallidas = resultados.length - subidas.length;
+
+      subidas.forEach((upload) => onAgregarImagen(upload.url));
+      setArchivos([]);
+      setInputKey((prev) => prev + 1);
+
+      if (subidas.length > 0) {
+        success(
+          subidas.length === 1
+            ? "imagen subida"
+            : `${subidas.length} imágenes subidas`
+        );
+      }
+
+      if (fallidas > 0) {
+        notifyError(
+          fallidas === 1
+            ? "1 imagen no se pudo subir"
+            : `${fallidas} imágenes no se pudieron subir`
+        );
+      }
     } catch (err) {
       notifyError(err.data?.error || "no pudimos subir la imagen");
     } finally {
@@ -49,9 +73,13 @@ export default function ImageManager({
 
         <div className="flex flex-col gap-3 rounded-xl border border-black/5 bg-background p-4 sm:flex-row sm:items-center">
           <input
+            key={inputKey}
             type="file"
             accept="image/jpeg,image/png,image/webp"
-            onChange={(event) => setArchivo(event.target.files?.[0] || null)}
+            multiple
+            onChange={(event) =>
+              setArchivos(Array.from(event.target.files || []))
+            }
             className="w-full text-sm text-text/70 file:mr-4 file:rounded-lg file:border-0 file:bg-white file:px-4 file:py-2 file:text-sm file:text-primary"
           />
 
@@ -61,7 +89,11 @@ export default function ImageManager({
             disabled={subiendo}
             className="rounded-xl bg-primary px-5 py-3 text-sm text-white transition hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-55"
           >
-            {subiendo ? "subiendo..." : "subir imagen"}
+            {subiendo
+              ? "subiendo..."
+              : archivos.length > 1
+                ? `subir ${archivos.length} imágenes`
+                : "subir imagen"}
           </button>
         </div>
 
