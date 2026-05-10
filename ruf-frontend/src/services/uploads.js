@@ -4,7 +4,7 @@ import { getToken, logout } from "./auth";
 export async function uploadImage(file) {
   const token = getToken();
   const formData = new FormData();
-  formData.append("file", file);
+  formData.append("file", file, file.name || "imagen.jpg");
 
   const res = await fetch(`${API_URL}/api/admin/uploads/image`, {
     method: "POST",

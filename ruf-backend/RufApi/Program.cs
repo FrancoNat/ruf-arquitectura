@@ -280,7 +280,8 @@ uploads.MapPost("/image", async (HttpRequest request, IConfiguration configurati
         return Results.BadRequest(new { error = "no se recibió ningún archivo" });
     }
 
-    if (!IsSupportedImageFile(file))
+    await using var stream = file.OpenReadStream();
+    if (!await IsSupportedImageFileAsync(file, stream))
     {
         return Results.BadRequest(new
         {
@@ -300,7 +301,6 @@ uploads.MapPost("/image", async (HttpRequest request, IConfiguration configurati
         settings.CloudName,
         settings.ApiKey,
         settings.ApiSecret));
-    await using var stream = file.OpenReadStream();
     var uploadParams = new ImageUploadParams
     {
         File = new FileDescription(file.FileName, stream),
@@ -1034,7 +1034,7 @@ static CloudinarySettings GetCloudinarySettings(IConfiguration configuration)
         apiSecret.Trim());
 }
 
-static bool IsSupportedImageFile(IFormFile file)
+static async Task<bool> IsSupportedImageFileAsync(IFormFile file, Stream stream)
 {
     var allowedTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
@@ -1051,14 +1051,41 @@ static bool IsSupportedImageFile(IFormFile file)
         ".png"
     };
     var extension = Path.GetExtension(file.FileName);
+    var hasAllowedExtension = allowedExtensions.Contains(extension);
+    var hasAllowedContentType =
+        allowedTypes.Contains(file.ContentType) ||
+        string.IsNullOrWhiteSpace(file.ContentType);
+    var hasAllowedSignature = await HasSupportedImageSignatureAsync(stream);
+    stream.Position = 0;
 
-    if (allowedTypes.Contains(file.ContentType) && allowedExtensions.Contains(extension))
+    if (hasAllowedSignature)
     {
         return true;
     }
 
-    return string.IsNullOrWhiteSpace(file.ContentType) &&
-        allowedExtensions.Contains(extension);
+    return hasAllowedContentType && hasAllowedExtension;
+}
+
+static async Task<bool> HasSupportedImageSignatureAsync(Stream stream)
+{
+    var buffer = new byte[8];
+    var read = await stream.ReadAsync(buffer);
+
+    var isJpeg = read >= 3 &&
+        buffer[0] == 0xFF &&
+        buffer[1] == 0xD8 &&
+        buffer[2] == 0xFF;
+    var isPng = read >= 8 &&
+        buffer[0] == 0x89 &&
+        buffer[1] == 0x50 &&
+        buffer[2] == 0x4E &&
+        buffer[3] == 0x47 &&
+        buffer[4] == 0x0D &&
+        buffer[5] == 0x0A &&
+        buffer[6] == 0x1A &&
+        buffer[7] == 0x0A;
+
+    return isJpeg || isPng;
 }
 
 static ReunionResponse MapReunionResponse(Reunion reunion)
