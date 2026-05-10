@@ -80,7 +80,7 @@ export default function ImageManager({
           <input
             key={inputKey}
             type="file"
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/jpeg,image/png,image/webp,image/avif"
             multiple
             onChange={(event) =>
               setArchivos(Array.from(event.target.files || []))
