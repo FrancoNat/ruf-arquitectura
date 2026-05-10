@@ -245,7 +245,7 @@ export default function ProyectoForm({
       descripcionLarga: form.descripcionLarga,
       ubicacion: form.ubicacion,
       anio: form.anio,
-      superficie: form.superficie,
+      superficie: normalizarSuperficie(form.superficie),
       estado: form.estado,
       destacado: form.destacado,
       imagenPrincipal: form.imagenPrincipal,
@@ -506,4 +506,14 @@ export default function ProyectoForm({
       </div>
     </form>
   );
+}
+
+function normalizarSuperficie(superficie) {
+  const valor = superficie.trim();
+
+  if (!valor) {
+    return valor;
+  }
+
+  return /^\d+(?:[.,]\d+)?$/.test(valor) ? `${valor}m2` : valor;
 }
