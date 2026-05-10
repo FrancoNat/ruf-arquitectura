@@ -23,6 +23,11 @@ export async function uploadImage(file) {
     } catch {
       error.data = null;
     }
+    error.message =
+      error.data?.error ||
+      error.data?.detail ||
+      error.data?.title ||
+      `error upload: ${res.status}`;
 
     if (res.status === 401) {
       logout();

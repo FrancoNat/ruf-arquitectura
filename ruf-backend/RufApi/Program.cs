@@ -267,12 +267,6 @@ var uploads = app.MapGroup("/api/admin/uploads")
 
 uploads.MapPost("/image", async (HttpRequest request, IConfiguration configuration, ILogger<Program> logger) =>
 {
-    var allowedTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-    {
-        "image/jpeg",
-        "image/png"
-    };
-
     if (!request.HasFormContentType)
     {
         return Results.BadRequest(new { error = "la solicitud debe ser multipart/form-data" });
@@ -286,12 +280,12 @@ uploads.MapPost("/image", async (HttpRequest request, IConfiguration configurati
         return Results.BadRequest(new { error = "no se recibió ningún archivo" });
     }
 
-    if (!allowedTypes.Contains(file.ContentType))
+    if (!IsSupportedImageFile(file))
     {
         return Results.BadRequest(new
         {
             error = "tipo de imagen inválido. Subí una imagen JPG o PNG.",
-            detail = $"tipo recibido: {file.ContentType}"
+            detail = $"tipo recibido: {file.ContentType}; archivo: {file.FileName}"
         });
     }
 
@@ -1038,6 +1032,33 @@ static CloudinarySettings GetCloudinarySettings(IConfiguration configuration)
         cloudName.Trim(),
         apiKey.Trim(),
         apiSecret.Trim());
+}
+
+static bool IsSupportedImageFile(IFormFile file)
+{
+    var allowedTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        "image/jpeg",
+        "image/jpg",
+        "image/pjpeg",
+        "image/png",
+        "application/octet-stream"
+    };
+    var allowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        ".jpg",
+        ".jpeg",
+        ".png"
+    };
+    var extension = Path.GetExtension(file.FileName);
+
+    if (allowedTypes.Contains(file.ContentType) && allowedExtensions.Contains(extension))
+    {
+        return true;
+    }
+
+    return string.IsNullOrWhiteSpace(file.ContentType) &&
+        allowedExtensions.Contains(extension);
 }
 
 static ReunionResponse MapReunionResponse(Reunion reunion)

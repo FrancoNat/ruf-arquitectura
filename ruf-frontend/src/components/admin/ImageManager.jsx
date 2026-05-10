@@ -5,8 +5,8 @@ import { useState } from "react";
 import { useNotifications } from "@/components/ui/NotificationProvider";
 import { uploadImage } from "@/services/uploads";
 
-const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
-const MAX_IMAGE_PIXELS = 24_000_000;
+const MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
+const MAX_UPLOAD_PIXELS = 8_000_000;
 const MIN_JPEG_QUALITY = 0.62;
 const VALID_IMAGE_TYPES = new Set([
   "image/jpeg",
@@ -81,7 +81,8 @@ export default function ImageManager({
         const primerErrorUpload =
           errores[0]?.reason?.data?.error ||
           errores[0]?.reason?.data?.detail ||
-          errores[0]?.reason?.data?.title;
+          errores[0]?.reason?.data?.title ||
+          errores[0]?.reason?.message;
         notifyError(
           primerErrorUpload ||
             (fallidas === 1
@@ -231,7 +232,7 @@ async function prepararArchivo(archivo) {
   }
 
   const megapixeles = dimensiones.width * dimensiones.height;
-  if (archivo.size <= MAX_IMAGE_BYTES && megapixeles <= MAX_IMAGE_PIXELS) {
+  if (archivo.size <= MAX_UPLOAD_BYTES && megapixeles <= MAX_UPLOAD_PIXELS) {
     return { ok: true, archivo, optimizada: false };
   }
 
@@ -250,7 +251,7 @@ async function prepararArchivo(archivo) {
 async function optimizarImagen(archivo, dimensiones) {
   const escala = Math.min(
     1,
-    Math.sqrt(MAX_IMAGE_PIXELS / (dimensiones.width * dimensiones.height))
+    Math.sqrt(MAX_UPLOAD_PIXELS / (dimensiones.width * dimensiones.height))
   );
   const width = Math.max(1, Math.floor(dimensiones.width * escala));
   const height = Math.max(1, Math.floor(dimensiones.height * escala));
@@ -271,12 +272,12 @@ async function optimizarImagen(archivo, dimensiones) {
   let calidad = 0.86;
   let blob = await canvasToBlob(canvas, calidad);
 
-  while (blob.size > MAX_IMAGE_BYTES && calidad > MIN_JPEG_QUALITY) {
+  while (blob.size > MAX_UPLOAD_BYTES && calidad > MIN_JPEG_QUALITY) {
     calidad = Math.max(MIN_JPEG_QUALITY, calidad - 0.08);
     blob = await canvasToBlob(canvas, calidad);
   }
 
-  if (blob.size > MAX_IMAGE_BYTES) {
+  if (blob.size > MAX_UPLOAD_BYTES) {
     throw new Error("imagen demasiado pesada");
   }
 
