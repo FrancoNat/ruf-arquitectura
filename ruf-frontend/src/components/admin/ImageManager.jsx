@@ -33,6 +33,9 @@ export default function ImageManager({
       const subidas = resultados
         .filter((resultado) => resultado.status === "fulfilled")
         .map((resultado) => resultado.value);
+      const errores = resultados.filter(
+        (resultado) => resultado.status === "rejected"
+      );
       const fallidas = resultados.length - subidas.length;
 
       subidas.forEach((upload) => onAgregarImagen(upload.url));
@@ -48,10 +51,12 @@ export default function ImageManager({
       }
 
       if (fallidas > 0) {
+        const primerError = errores[0]?.reason?.data?.error;
         notifyError(
-          fallidas === 1
-            ? "1 imagen no se pudo subir"
-            : `${fallidas} imágenes no se pudieron subir`
+          primerError ||
+            (fallidas === 1
+              ? "1 imagen no se pudo subir"
+              : `${fallidas} imágenes no se pudieron subir`)
         );
       }
     } catch (err) {

@@ -11,6 +11,29 @@ import { Pagination, Autoplay } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/pagination";
 
+const etapasIncluidas = [
+  {
+    titulo: "reunión inicial",
+    descripcion:
+      "analizamos tu baño actual, puntos a mejorar y el estilo buscado. Para esta instancia vamos a pedirte previamente fotos del espacio y sus medidas.",
+  },
+  {
+    titulo: "segunda reunión: propuesta de diseño en 3D",
+    descripcion:
+      "te presentamos una primera propuesta de cómo quedará tu baño. La revisamos juntos y ajustamos, modificamos o repensamos lo necesario para que el proyecto se ajuste a lo que buscás y necesitás.",
+  },
+  {
+    titulo: "entrega final",
+    descripcion: "recibís la carpeta completa del proyecto con:",
+    items: [
+      "renders finales",
+      "planos 2D del espacio",
+      "lista de compras de materiales y productos sugeridos",
+      "detalles técnicos si hay muebles a medida",
+    ],
+  },
+];
+
 export default function ProyectoDetalleClient({ proyecto }) {
   useEffect(() => {
     Fancybox.bind("[data-fancybox]", {});
@@ -87,6 +110,51 @@ export default function ProyectoDetalleClient({ proyecto }) {
           </dl>
         </aside>
       </div>
+
+      <section className="mb-10 rounded-2xl border border-black/5 bg-white p-5 shadow-sm sm:p-6">
+        <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-primary/55">
+              servicio online
+            </p>
+            <h2 className="mt-3 text-2xl text-primary">¿qué incluye?</h2>
+            <p className="mt-4 text-sm leading-relaxed text-text/65">
+              modalidad 100% online. Podés hacerlo desde cualquier lugar.
+            </p>
+          </div>
+
+          <div className="divide-y divide-black/5">
+            {etapasIncluidas.map((etapa, index) => (
+              <div
+                key={etapa.titulo}
+                className="grid gap-4 py-5 first:pt-0 last:pb-0 sm:grid-cols-[52px_1fr]"
+              >
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-background text-sm text-primary">
+                  {index + 1}
+                </span>
+
+                <div>
+                  <h3 className="text-base text-primary">{etapa.titulo}</h3>
+                  <p className="mt-2 leading-relaxed text-text/70">
+                    {etapa.descripcion}
+                  </p>
+
+                  {etapa.items ? (
+                    <ul className="mt-3 grid gap-2 text-sm text-text/70 sm:grid-cols-2">
+                      {etapa.items.map((item) => (
+                        <li key={item} className="flex gap-2">
+                          <span className="mt-[0.45rem] h-1.5 w-1.5 rounded-full bg-primary/55" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       <div className="flex flex-wrap justify-center gap-3 sm:justify-start">
         <Link

@@ -318,7 +318,11 @@ uploads.MapPost("/image", async (HttpRequest request, IConfiguration configurati
         if (result.Error is not null)
         {
             logger.LogError("error cloudinary: {Message}", result.Error.Message);
-            return Results.Problem("no pudimos subir la imagen", statusCode: StatusCodes.Status500InternalServerError);
+            return Results.BadRequest(new
+            {
+                error = "cloudinary rechazó la imagen. Revisá el tamaño máximo permitido por el plan de Cloudinary.",
+                detail = result.Error.Message
+            });
         }
 
         return Results.Ok(new UploadImageResponse(result.SecureUrl.ToString(), result.PublicId));
