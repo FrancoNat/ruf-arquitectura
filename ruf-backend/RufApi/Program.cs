@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Globalization;
 using System.Security.Claims;
+using System.Text.Json;
 using System.Text;
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
@@ -346,6 +347,7 @@ proyectos.MapGet("/", async (
     var query = db.Proyectos
         .AsNoTracking()
         .Include(proyecto => proyecto.ImagenesPersistidas)
+        .Include(proyecto => proyecto.IncluyeItems)
         .AsQueryable();
 
     if (!string.IsNullOrWhiteSpace(categoria))
@@ -377,6 +379,7 @@ proyectos.MapGet("/{id}", async (RufDbContext db, string id) =>
     var proyecto = await db.Proyectos
         .AsNoTracking()
         .Include(item => item.ImagenesPersistidas)
+        .Include(item => item.IncluyeItems)
         .FirstOrDefaultAsync(item => item.Id == id || item.Slug == normalized);
 
     return proyecto is null ? Results.NotFound() : Results.Ok(MapProyectoResponse(proyecto));
@@ -406,7 +409,8 @@ proyectos.MapPost("/", async (RufDbContext db, ProyectoRequest request) =>
         Alt = alt,
         CreatedAt = now,
         UpdatedAt = now,
-        ImagenesPersistidas = BuildProyectoImagenes(request.Imagenes, alt)
+        ImagenesPersistidas = BuildProyectoImagenes(request.Imagenes, alt),
+        IncluyeItems = BuildProyectoIncluyeItems(request.Incluye)
     };
 
     db.Proyectos.Add(proyecto);
@@ -420,6 +424,7 @@ proyectos.MapPut("/{id}", async (RufDbContext db, string id, ProyectoRequest req
     var normalized = id.Trim().ToLowerInvariant();
     var proyecto = await db.Proyectos
         .Include(item => item.ImagenesPersistidas)
+        .Include(item => item.IncluyeItems)
         .FirstOrDefaultAsync(item => item.Id == id || item.Slug == normalized);
 
     if (proyecto is null)
@@ -448,6 +453,8 @@ proyectos.MapPut("/{id}", async (RufDbContext db, string id, ProyectoRequest req
     proyecto.UpdatedAt = DateTime.UtcNow;
     proyecto.ImagenesPersistidas.Clear();
     proyecto.ImagenesPersistidas.AddRange(BuildProyectoImagenes(request.Imagenes, alt));
+    proyecto.IncluyeItems.Clear();
+    proyecto.IncluyeItems.AddRange(BuildProyectoIncluyeItems(request.Incluye));
 
     await db.SaveChangesAsync();
 
@@ -1105,6 +1112,19 @@ static ProyectoResponse MapProyectoResponse(Proyecto proyecto)
         .OrderBy(imagen => imagen.Orden)
         .Select(imagen => imagen.Url)
         .ToList();
+    var incluye = proyecto.IncluyeItems
+        .OrderBy(item => item.Orden)
+        .Select(MapProyectoIncluyeItemResponse)
+        .ToList();
+    if (incluye.Count == 0)
+    {
+        incluye = GetDefaultProyectoIncluyeItems()
+            .Select(item => new ProyectoIncluyeItemResponse(
+                item.Titulo,
+                item.Descripcion,
+                NormalizeProyectoIncluyeItems(item.Items)))
+            .ToList();
+    }
 
     return new ProyectoResponse(
         proyecto.Id,
@@ -1121,8 +1141,17 @@ static ProyectoResponse MapProyectoResponse(Proyecto proyecto)
         proyecto.ImagenPrincipal,
         proyecto.Alt,
         imagenes,
+        incluye,
         proyecto.CreatedAt,
         proyecto.UpdatedAt);
+}
+
+static ProyectoIncluyeItemResponse MapProyectoIncluyeItemResponse(ProyectoIncluyeItem item)
+{
+    return new ProyectoIncluyeItemResponse(
+        item.Titulo,
+        item.Descripcion,
+        ParseProyectoIncluyeItems(item.ItemsJson));
 }
 
 static string BuildProyectoAlt(string? alt, string titulo)
@@ -1143,6 +1172,68 @@ static List<ProyectoImagen> BuildProyectoImagenes(List<string> imagenes, string 
             Orden = index
         })
         .ToList();
+}
+
+static List<ProyectoIncluyeItemRequest> GetDefaultProyectoIncluyeItems()
+{
+    return
+    [
+        new(
+            "reunión inicial",
+            "analizamos tu baño actual, puntos a mejorar y el estilo buscado. Para esta instancia vamos a pedirte previamente fotos del espacio y sus medidas."),
+        new(
+            "segunda reunión: propuesta de diseño en 3D",
+            "te presentamos una primera propuesta de cómo quedará tu baño. La revisamos juntos y ajustamos, modificamos o repensamos lo necesario para que el proyecto se ajuste a lo que buscás y necesitás."),
+        new(
+            "entrega final",
+            "recibís la carpeta completa del proyecto con:",
+            [
+                "renders finales",
+                "planos 2D del espacio",
+                "lista de compras de materiales y productos sugeridos",
+                "detalles técnicos si hay muebles a medida"
+            ])
+    ];
+}
+
+static List<ProyectoIncluyeItem> BuildProyectoIncluyeItems(
+    List<ProyectoIncluyeItemRequest>? items)
+{
+    var source = items is { Count: > 0 } ? items : GetDefaultProyectoIncluyeItems();
+
+    return source
+        .Where(item =>
+            !string.IsNullOrWhiteSpace(item.Titulo) ||
+            !string.IsNullOrWhiteSpace(item.Descripcion) ||
+            item.Items is { Count: > 0 })
+        .Select((item, index) => new ProyectoIncluyeItem
+        {
+            Titulo = item.Titulo.Trim(),
+            Descripcion = item.Descripcion.Trim(),
+            ItemsJson = JsonSerializer.Serialize(NormalizeProyectoIncluyeItems(item.Items)),
+            Orden = index
+        })
+        .ToList();
+}
+
+static List<string> NormalizeProyectoIncluyeItems(List<string>? items)
+{
+    return items?
+        .Select(item => item.Trim())
+        .Where(item => !string.IsNullOrWhiteSpace(item))
+        .ToList() ?? [];
+}
+
+static List<string> ParseProyectoIncluyeItems(string itemsJson)
+{
+    try
+    {
+        return JsonSerializer.Deserialize<List<string>>(itemsJson) ?? [];
+    }
+    catch
+    {
+        return [];
+    }
 }
 
 static async Task<string> EnsureUniqueProyectoSlugAsync(
@@ -1260,7 +1351,8 @@ static async Task SeedProyectoDataAsync(IServiceProvider services, ILogger logge
                 Alt = alt,
                 CreatedAt = now,
                 UpdatedAt = now,
-                ImagenesPersistidas = BuildProyectoImagenes(seed.Imagenes, alt)
+                ImagenesPersistidas = BuildProyectoImagenes(seed.Imagenes, alt),
+                IncluyeItems = BuildProyectoIncluyeItems(seed.Incluye)
             });
         }
 
@@ -1559,8 +1651,14 @@ public sealed record ProyectoResponse(
     string ImagenPrincipal,
     string Alt,
     List<string> Imagenes,
+    List<ProyectoIncluyeItemResponse> Incluye,
     DateTime CreatedAt,
     DateTime UpdatedAt);
+
+public sealed record ProyectoIncluyeItemResponse(
+    string Titulo,
+    string Descripcion,
+    List<string> Items);
 
 public sealed record TestimonioResponse(
     string Id,

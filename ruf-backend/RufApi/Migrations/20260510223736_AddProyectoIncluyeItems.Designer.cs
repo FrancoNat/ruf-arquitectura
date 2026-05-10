@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using RufApi.Data;
@@ -11,9 +12,11 @@ using RufApi.Data;
 namespace RufApi.Migrations
 {
     [DbContext(typeof(RufDbContext))]
-    partial class RufDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260510223736_AddProyectoIncluyeItems")]
+    partial class AddProyectoIncluyeItems
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

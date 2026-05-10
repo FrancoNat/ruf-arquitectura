@@ -54,6 +54,8 @@ public sealed class Proyecto
     public List<string> Imagenes { get; set; } = [];
     [JsonIgnore]
     public List<ProyectoImagen> ImagenesPersistidas { get; set; } = [];
+    [JsonIgnore]
+    public List<ProyectoIncluyeItem> IncluyeItems { get; set; } = [];
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }
@@ -63,6 +65,17 @@ public sealed class ProyectoImagen
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
     public string Url { get; set; } = string.Empty;
     public string Alt { get; set; } = string.Empty;
+    public int Orden { get; set; }
+    public string ProyectoId { get; set; } = string.Empty;
+    public Proyecto Proyecto { get; set; } = null!;
+}
+
+public sealed class ProyectoIncluyeItem
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString("N");
+    public string Titulo { get; set; } = string.Empty;
+    public string Descripcion { get; set; } = string.Empty;
+    public string ItemsJson { get; set; } = "[]";
     public int Orden { get; set; }
     public string ProyectoId { get; set; } = string.Empty;
     public Proyecto Proyecto { get; set; } = null!;

@@ -12,6 +12,7 @@ public sealed class RufDbContext : DbContext
 
     public DbSet<Proyecto> Proyectos => Set<Proyecto>();
     public DbSet<ProyectoImagen> ProyectoImagenes => Set<ProyectoImagen>();
+    public DbSet<ProyectoIncluyeItem> ProyectoIncluyeItems => Set<ProyectoIncluyeItem>();
     public DbSet<Testimonio> Testimonios => Set<Testimonio>();
     public DbSet<Categoria> Categorias => Set<Categoria>();
     public DbSet<Usuario> Usuarios => Set<Usuario>();
@@ -88,6 +89,11 @@ public sealed class RufDbContext : DbContext
                 .WithOne(imagen => imagen.Proyecto)
                 .HasForeignKey(imagen => imagen.ProyectoId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasMany(proyecto => proyecto.IncluyeItems)
+                .WithOne(item => item.Proyecto)
+                .HasForeignKey(item => item.ProyectoId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<ProyectoImagen>(entity =>
@@ -108,6 +114,30 @@ public sealed class RufDbContext : DbContext
                 .HasMaxLength(250);
 
             entity.Property(imagen => imagen.ProyectoId)
+                .IsRequired()
+                .HasMaxLength(120);
+        });
+
+        modelBuilder.Entity<ProyectoIncluyeItem>(entity =>
+        {
+            entity.ToTable("proyecto_incluye_items");
+
+            entity.HasKey(item => item.Id);
+
+            entity.Property(item => item.Id)
+                .HasMaxLength(120);
+
+            entity.Property(item => item.Titulo)
+                .IsRequired()
+                .HasMaxLength(180);
+
+            entity.Property(item => item.Descripcion)
+                .IsRequired();
+
+            entity.Property(item => item.ItemsJson)
+                .IsRequired();
+
+            entity.Property(item => item.ProyectoId)
                 .IsRequired()
                 .HasMaxLength(120);
         });

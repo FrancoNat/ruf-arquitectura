@@ -11,29 +11,6 @@ import { Pagination, Autoplay } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/pagination";
 
-const etapasIncluidas = [
-  {
-    titulo: "reunión inicial",
-    descripcion:
-      "analizamos tu baño actual, puntos a mejorar y el estilo buscado. Para esta instancia vamos a pedirte previamente fotos del espacio y sus medidas.",
-  },
-  {
-    titulo: "segunda reunión: propuesta de diseño en 3D",
-    descripcion:
-      "te presentamos una primera propuesta de cómo quedará tu baño. La revisamos juntos y ajustamos, modificamos o repensamos lo necesario para que el proyecto se ajuste a lo que buscás y necesitás.",
-  },
-  {
-    titulo: "entrega final",
-    descripcion: "recibís la carpeta completa del proyecto con:",
-    items: [
-      "renders finales",
-      "planos 2D del espacio",
-      "lista de compras de materiales y productos sugeridos",
-      "detalles técnicos si hay muebles a medida",
-    ],
-  },
-];
-
 export default function ProyectoDetalleClient({ proyecto }) {
   useEffect(() => {
     Fancybox.bind("[data-fancybox]", {});
@@ -124,9 +101,9 @@ export default function ProyectoDetalleClient({ proyecto }) {
           </div>
 
           <div className="divide-y divide-black/5">
-            {etapasIncluidas.map((etapa, index) => (
+            {proyecto.incluye.map((etapa, index) => (
               <div
-                key={etapa.titulo}
+                key={`${etapa.titulo}-${index}`}
                 className="grid gap-4 py-5 first:pt-0 last:pb-0 sm:grid-cols-[52px_1fr]"
               >
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-background text-sm text-primary">
@@ -139,10 +116,10 @@ export default function ProyectoDetalleClient({ proyecto }) {
                     {etapa.descripcion}
                   </p>
 
-                  {etapa.items ? (
+                  {etapa.items.length > 0 ? (
                     <ul className="mt-3 grid gap-2 text-sm text-text/70 sm:grid-cols-2">
-                      {etapa.items.map((item) => (
-                        <li key={item} className="flex gap-2">
+                      {etapa.items.map((item, itemIndex) => (
+                        <li key={`${item}-${itemIndex}`} className="flex gap-2">
                           <span className="mt-[0.45rem] h-1.5 w-1.5 rounded-full bg-primary/55" />
                           <span>{item}</span>
                         </li>

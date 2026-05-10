@@ -1,5 +1,42 @@
 import { apiFetch } from "./api";
 
+export const proyectoIncluyeDefault = [
+  {
+    titulo: "reunión inicial",
+    descripcion:
+      "analizamos tu baño actual, puntos a mejorar y el estilo buscado. Para esta instancia vamos a pedirte previamente fotos del espacio y sus medidas.",
+    items: [],
+  },
+  {
+    titulo: "segunda reunión: propuesta de diseño en 3D",
+    descripcion:
+      "te presentamos una primera propuesta de cómo quedará tu baño. La revisamos juntos y ajustamos, modificamos o repensamos lo necesario para que el proyecto se ajuste a lo que buscás y necesitás.",
+    items: [],
+  },
+  {
+    titulo: "entrega final",
+    descripcion: "recibís la carpeta completa del proyecto con:",
+    items: [
+      "renders finales",
+      "planos 2D del espacio",
+      "lista de compras de materiales y productos sugeridos",
+      "detalles técnicos si hay muebles a medida",
+    ],
+  },
+];
+
+function normalizeIncluye(incluye) {
+  const items = Array.isArray(incluye) && incluye.length > 0
+    ? incluye
+    : proyectoIncluyeDefault;
+
+  return items.map((item) => ({
+    titulo: item.titulo || "",
+    descripcion: item.descripcion || "",
+    items: Array.isArray(item.items) ? item.items : [],
+  }));
+}
+
 function mapProyecto(proyecto) {
   return {
     ...proyecto,
@@ -9,6 +46,7 @@ function mapProyecto(proyecto) {
     imagenes: proyecto.imagenes?.length
       ? proyecto.imagenes
       : [proyecto.imagenPrincipal].filter(Boolean),
+    incluye: normalizeIncluye(proyecto.incluye),
   };
 }
 
@@ -46,6 +84,7 @@ function normalizeProyectoPayload(data) {
     destacado: data.destacado,
     imagenPrincipal: data.imagenPrincipal,
     imagenes: Array.isArray(data.imagenes) ? data.imagenes : [],
+    incluye: normalizeIncluye(data.incluye),
   };
 }
 

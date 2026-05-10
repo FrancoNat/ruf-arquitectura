@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNotifications } from "@/components/ui/NotificationProvider";
 import { getCategorias } from "@/services/categorias";
+import { proyectoIncluyeDefault } from "@/services/proyectos";
 import ImageManager from "./ImageManager";
 
 const baseState = {
@@ -17,6 +18,7 @@ const baseState = {
   destacado: false,
   imagenPrincipal: "",
   imagenes: [],
+  incluye: proyectoIncluyeDefault,
 };
 
 export default function ProyectoForm({
@@ -33,6 +35,7 @@ export default function ProyectoForm({
       ...initialData,
       imagenes: initialData?.imagenes ?? [],
       imagenPrincipal: initialData?.imagenPrincipal ?? "",
+      incluye: initialData?.incluye ?? proyectoIncluyeDefault,
     }),
     [initialData]
   );
@@ -164,6 +167,74 @@ export default function ProyectoForm({
     });
   };
 
+  const actualizarIncluye = (index, campo, valor) => {
+    setForm((prev) => ({
+      ...prev,
+      incluye: prev.incluye.map((item, current) =>
+        current === index ? { ...item, [campo]: valor } : item
+      ),
+    }));
+  };
+
+  const actualizarIncluyeItems = (index, valor) => {
+    setForm((prev) => ({
+      ...prev,
+      incluye: prev.incluye.map((item, current) =>
+        current === index
+          ? {
+              ...item,
+              items: valor
+                .split("\n")
+                .map((linea) => linea.trim())
+                .filter(Boolean),
+            }
+          : item
+      ),
+    }));
+  };
+
+  const agregarIncluye = () => {
+    setForm((prev) => ({
+      ...prev,
+      incluye: [...prev.incluye, { titulo: "", descripcion: "", items: [] }],
+    }));
+  };
+
+  const eliminarIncluye = (index) => {
+    setForm((prev) => ({
+      ...prev,
+      incluye: prev.incluye.filter((_, current) => current !== index),
+    }));
+  };
+
+  const moverIncluyeArriba = (index) => {
+    if (index === 0) return;
+
+    setForm((prev) => {
+      const incluye = [...prev.incluye];
+      [incluye[index - 1], incluye[index]] = [incluye[index], incluye[index - 1]];
+
+      return {
+        ...prev,
+        incluye,
+      };
+    });
+  };
+
+  const moverIncluyeAbajo = (index) => {
+    setForm((prev) => {
+      if (index === prev.incluye.length - 1) return prev;
+
+      const incluye = [...prev.incluye];
+      [incluye[index], incluye[index + 1]] = [incluye[index + 1], incluye[index]];
+
+      return {
+        ...prev,
+        incluye,
+      };
+    });
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -179,6 +250,7 @@ export default function ProyectoForm({
       destacado: form.destacado,
       imagenPrincipal: form.imagenPrincipal,
       imagenes: form.imagenes,
+      incluye: form.incluye,
     };
 
     if (onSubmit) {
@@ -319,6 +391,106 @@ export default function ProyectoForm({
         onMoverImagenArriba={moverImagenArriba}
         onMoverImagenAbajo={moverImagenAbajo}
       />
+
+      <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-sm text-text/80">¿qué incluye?</p>
+            <p className="mt-1 text-xs leading-relaxed text-text/55">
+              editá las etapas que se muestran dentro del detalle público del
+              proyecto.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={agregarIncluye}
+            className="w-fit rounded-xl border border-primary/20 px-4 py-2 text-sm text-primary transition hover:bg-background"
+          >
+            agregar etapa
+          </button>
+        </div>
+
+        <div className="mt-5 space-y-4">
+          {form.incluye.map((item, index) => (
+            <div
+              key={`${item.titulo}-${index}`}
+              className="rounded-xl border border-black/5 bg-background p-4"
+            >
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs uppercase tracking-[0.18em] text-primary/55">
+                  etapa {index + 1}
+                </span>
+
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => moverIncluyeArriba(index)}
+                    disabled={index === 0}
+                    className="rounded-lg border border-primary/20 px-3 py-2 text-xs text-primary transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    subir
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moverIncluyeAbajo(index)}
+                    disabled={index === form.incluye.length - 1}
+                    className="rounded-lg border border-primary/20 px-3 py-2 text-xs text-primary transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    bajar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => eliminarIncluye(index)}
+                    className="rounded-lg border border-primary/20 px-3 py-2 text-xs text-primary transition hover:bg-white"
+                  >
+                    eliminar
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="space-y-2 text-sm text-text/80 md:col-span-2">
+                  <span>título</span>
+                  <input
+                    type="text"
+                    value={item.titulo}
+                    onChange={(event) =>
+                      actualizarIncluye(index, "titulo", event.target.value)
+                    }
+                    className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 outline-none transition focus:border-primary"
+                  />
+                </label>
+
+                <label className="space-y-2 text-sm text-text/80">
+                  <span>descripción</span>
+                  <textarea
+                    value={item.descripcion}
+                    onChange={(event) =>
+                      actualizarIncluye(index, "descripcion", event.target.value)
+                    }
+                    rows={5}
+                    className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 outline-none transition focus:border-primary"
+                  />
+                </label>
+
+                <label className="space-y-2 text-sm text-text/80">
+                  <span>entregables o bullets</span>
+                  <textarea
+                    value={item.items.join("\n")}
+                    onChange={(event) =>
+                      actualizarIncluyeItems(index, event.target.value)
+                    }
+                    rows={5}
+                    placeholder="un ítem por línea"
+                    className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 outline-none transition focus:border-primary"
+                  />
+                </label>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       <div className="rounded-2xl border border-black/5 bg-white p-4 shadow-sm sm:p-6">
         <div className="flex flex-wrap items-center justify-center gap-3">

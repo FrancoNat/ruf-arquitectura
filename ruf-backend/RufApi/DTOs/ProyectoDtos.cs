@@ -13,5 +13,12 @@ public sealed record ProyectoRequest(
     string ImagenPrincipal,
     List<string> Imagenes,
     string? Slug = null,
-    string? Alt = null
+    string? Alt = null,
+    List<ProyectoIncluyeItemRequest>? Incluye = null
+);
+
+public sealed record ProyectoIncluyeItemRequest(
+    string Titulo,
+    string Descripcion,
+    List<string>? Items = null
 );

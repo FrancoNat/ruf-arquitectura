@@ -71,6 +71,13 @@ export default function Navbar({ alwaysVisible = false }) {
               proyectos
             </Link>
             <Link
+              href="/arquitectura"
+              onClick={cerrarMenu}
+              className="hover:text-white transition"
+            >
+              arquitectura
+            </Link>
+            <Link
               href="/quienes-somos"
               onClick={cerrarMenu}
               className="hover:text-white transition"
@@ -94,6 +101,9 @@ export default function Navbar({ alwaysVisible = false }) {
             </Link>
             <Link href="/proyectos" className="hover:text-white transition">
               proyectos
+            </Link>
+            <Link href="/arquitectura" className="hover:text-white transition">
+              arquitectura
             </Link>
           </div>
 
