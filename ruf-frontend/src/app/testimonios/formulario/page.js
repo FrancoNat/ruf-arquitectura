@@ -34,8 +34,7 @@ export default function TestimonioFormularioPage() {
               <div>
                 <h2 className="text-2xl text-primary">tu experiencia</h2>
                 <p className="mt-4 text-sm leading-relaxed text-text/60">
-                  completá los datos principales y contanos qué servicio hicimos
-                  juntas.
+                  completá tus datos y contanos cómo fue trabajar con nosotras.
                 </p>
               </div>
 
