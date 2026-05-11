@@ -87,6 +87,7 @@ if (app.Environment.IsDevelopment())
 if (app.Environment.IsProduction())
 {
     await SeedUsuarioDataAsync(app.Services, app.Configuration, app.Logger);
+    await SeedAgendaDataAsync(app.Services, app.Logger);
 }
 
 app.UseCors(FrontendCorsPolicy);
@@ -1591,33 +1592,33 @@ static async Task SeedAgendaDataAsync(IServiceProvider services, ILogger logger)
         using var scope = services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<RufDbContext>();
 
-        if (await db.HorariosBase.AnyAsync())
-        {
-            return;
-        }
-
         var now = DateTime.UtcNow;
-        var horarios = new[]
-        {
-            new TimeOnly(10, 0),
-            new TimeOnly(11, 0),
-            new TimeOnly(12, 0),
-            new TimeOnly(16, 0),
-            new TimeOnly(17, 0),
-            new TimeOnly(18, 0)
-        };
+        var horarios = Enumerable
+            .Range(9, 10)
+            .Select(hora => new TimeOnly(hora, 0))
+            .ToList();
 
         foreach (var (hora, index) in horarios.Select((hora, index) => (hora, index)))
         {
-            db.HorariosBase.Add(new HorarioBase
+            var horario = await db.HorariosBase.FirstOrDefaultAsync(item => item.Hora == hora);
+
+            if (horario is null)
             {
-                Id = Guid.NewGuid().ToString("N"),
-                Hora = hora,
-                Activo = true,
-                Orden = index + 1,
-                CreatedAt = now,
-                UpdatedAt = now
-            });
+                db.HorariosBase.Add(new HorarioBase
+                {
+                    Id = Guid.NewGuid().ToString("N"),
+                    Hora = hora,
+                    Activo = true,
+                    Orden = index + 1,
+                    CreatedAt = now,
+                    UpdatedAt = now
+                });
+                continue;
+            }
+
+            horario.Activo = true;
+            horario.Orden = index + 1;
+            horario.UpdatedAt = now;
         }
 
         await db.SaveChangesAsync();

@@ -73,7 +73,7 @@ export default function ArquitecturaPage() {
                     </span>
 
                     <div>
-                      <h3 className="text-base text-primary">
+                      <h3 className="text-base font-semibold text-primary">
                         {servicio.titulo}
                       </h3>
                       <p className="mt-2 leading-relaxed text-text/70">
