@@ -24,13 +24,13 @@ export default function ProyectosDestacadosCarousel({ proyectos }) {
       className="ruf-swiper !pb-16"
     >
       {proyectos.map((proyecto) => (
-        <SwiperSlide key={proyecto.id} className="h-auto">
+        <SwiperSlide key={proyecto.id} className="!h-auto">
           <Link
             href={`/proyectos/${proyecto.id}`}
             className="group block h-full"
           >
-            <article className="flex h-full flex-col overflow-hidden rounded-xl border border-black/5 bg-white shadow-sm">
-              <div className="relative h-72 w-full overflow-hidden sm:h-80 md:h-64">
+            <article className="flex h-[390px] flex-col overflow-hidden rounded-xl border border-black/5 bg-white shadow-sm sm:h-[430px] md:h-[360px]">
+              <div className="relative h-[280px] w-full shrink-0 overflow-hidden sm:h-[320px] md:h-[248px]">
                 <Image
                   src={proyecto.imagen}
                   alt={proyecto.alt}
@@ -40,11 +40,13 @@ export default function ProyectosDestacadosCarousel({ proyectos }) {
                 />
               </div>
 
-              <div className="p-5">
-                <p className="text-xs uppercase tracking-[0.18em] text-primary/60">
+              <div className="flex min-h-0 flex-1 flex-col justify-start p-5">
+                <p className="line-clamp-1 text-xs uppercase tracking-[0.18em] text-primary/60">
                   {proyecto.categoriaNombre || proyecto.categoria}
                 </p>
-                <h3 className="mt-2 text-lg text-primary">{proyecto.titulo}</h3>
+                <h3 className="mt-2 line-clamp-2 text-lg leading-snug text-primary">
+                  {proyecto.titulo}
+                </h3>
               </div>
             </article>
           </Link>
