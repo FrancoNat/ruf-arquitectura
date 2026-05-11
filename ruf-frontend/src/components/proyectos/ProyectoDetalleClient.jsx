@@ -12,6 +12,8 @@ import "swiper/css";
 import "swiper/css/pagination";
 
 export default function ProyectoDetalleClient({ proyecto }) {
+  const categoriaNombre = proyecto.categoriaNombre || proyecto.categoria;
+
   useEffect(() => {
     Fancybox.bind("[data-fancybox]", {});
 
@@ -25,7 +27,7 @@ export default function ProyectoDetalleClient({ proyecto }) {
     <div className="mx-auto max-w-5xl px-4 sm:px-6">
       <div className="mb-8">
         <p className="text-xs uppercase tracking-[0.2em] text-primary/60">
-          {proyecto.categoria}
+          {categoriaNombre}
         </p>
         <h1 className="mt-3 text-3xl text-primary sm:text-4xl">
           {proyecto.titulo}
@@ -80,7 +82,7 @@ export default function ProyectoDetalleClient({ proyecto }) {
         <aside className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm sm:p-6">
           <h2 className="text-xl text-primary">ficha técnica</h2>
           <dl className="mt-5 divide-y divide-black/5 text-sm">
-            <ProjectMeta label="categoría" value={proyecto.categoria} />
+            <ProjectMeta label="categoría" value={categoriaNombre} />
             <ProjectMeta label="ubicación" value={proyecto.ubicacion} />
             <ProjectMeta label="año" value={proyecto.anio} />
             <ProjectMeta label="superficie" value={proyecto.superficie} />

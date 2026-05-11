@@ -31,7 +31,7 @@ export default function TestimonioAdminCard({
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-lg text-primary">{testimonio.nombre}</h2>
             <span className="rounded-full bg-background px-2.5 py-1 text-xs text-text/65">
-              {testimonio.tipoProyecto}
+              {testimonio.tipoProyectoNombre || testimonio.tipoProyecto}
             </span>
           </div>
 

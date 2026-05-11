@@ -20,7 +20,9 @@ export default function ProyectoAdminCard({ proyecto }) {
         <div className="space-y-4 p-5">
           <div className="space-y-2">
             <h2 className="text-xl text-primary">{proyecto.titulo}</h2>
-            <p className="text-sm text-text/70">{proyecto.categoria}</p>
+            <p className="text-sm text-text/70">
+              {proyecto.categoriaNombre || proyecto.categoria}
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-3 text-sm text-text/75">

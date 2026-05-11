@@ -17,7 +17,9 @@ export default function ReunionAdminCard({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-base text-primary">{reunion.nombre}</p>
-          <p className="mt-1 text-sm text-text/70">{reunion.tipoProyecto}</p>
+          <p className="mt-1 text-sm text-text/70">
+            {reunion.tipoProyectoNombre || reunion.tipoProyecto}
+          </p>
           <p className="mt-2 text-sm text-text/55">hora: {reunion.hora}</p>
         </div>
 

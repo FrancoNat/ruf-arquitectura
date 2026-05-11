@@ -1,4 +1,5 @@
 import { apiFetch } from "./api";
+import { getCategoriaNombre } from "@/utils/categorias";
 
 export const proyectoIncluyeDefault = [
   {
@@ -47,6 +48,7 @@ function mapProyecto(proyecto) {
       ? proyecto.imagenes
       : [proyecto.imagenPrincipal].filter(Boolean),
     incluye: normalizeIncluye(proyecto.incluye),
+    categoriaNombre: getCategoriaNombre(proyecto.categoria),
   };
 }
 

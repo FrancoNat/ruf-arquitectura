@@ -1,4 +1,5 @@
 import { apiFetch } from "./api";
+import { getCategoriaNombre } from "@/utils/categorias";
 
 function normalizarHora(hora) {
   return hora.length >= 5 ? hora.slice(0, 5) : hora;
@@ -12,6 +13,7 @@ function mapReunion(reunion) {
   return {
     ...reunion,
     hora: normalizarHora(reunion.hora),
+    tipoProyectoNombre: getCategoriaNombre(reunion.tipoProyecto),
   };
 }
 

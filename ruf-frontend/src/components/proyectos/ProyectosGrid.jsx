@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { getCategoriaNombre } from "@/utils/categorias";
 
 export default function ProyectosGrid({ proyectos, categorias = [] }) {
   const [filtroActivo, setFiltroActivo] = useState("todos");
@@ -25,6 +26,22 @@ export default function ProyectosGrid({ proyectos, categorias = [] }) {
 
     return proyectos.filter((proyecto) => proyecto.categoria === filtroActivo);
   }, [filtroActivo, proyectos]);
+
+  const categoriasMap = useMemo(
+    () =>
+      new Map(
+        categorias.map((categoria) => [
+          categoria.id,
+          categoria.nombre || getCategoriaNombre(categoria.id),
+        ])
+      ),
+    [categorias]
+  );
+
+  const getCategoriaLabel = (proyecto) =>
+    proyecto.categoriaNombre ||
+    categoriasMap.get(proyecto.categoria) ||
+    getCategoriaNombre(proyecto.categoria);
 
   return (
     <>
@@ -65,7 +82,7 @@ export default function ProyectosGrid({ proyectos, categorias = [] }) {
 
               <div className="p-5">
                 <p className="text-xs uppercase tracking-[0.18em] text-primary/60">
-                  {proyecto.categoria}
+                  {getCategoriaLabel(proyecto)}
                 </p>
                 <h2 className="mt-2 text-lg text-primary">
                   {proyecto.titulo}

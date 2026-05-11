@@ -42,7 +42,7 @@ export default function ProyectosDestacadosCarousel({ proyectos }) {
 
               <div className="p-5">
                 <p className="text-xs uppercase tracking-[0.18em] text-primary/60">
-                  {proyecto.categoria}
+                  {proyecto.categoriaNombre || proyecto.categoria}
                 </p>
                 <h3 className="mt-2 text-lg text-primary">{proyecto.titulo}</h3>
               </div>

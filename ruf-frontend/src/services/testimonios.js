@@ -1,4 +1,5 @@
 import { apiFetch } from "./api";
+import { getCategoriaNombre } from "@/utils/categorias";
 
 const fotosFallback = {
   "maria-g": "/images/testimonios/maria-g.jpg",
@@ -12,7 +13,8 @@ function mapTestimonio(testimonio) {
 
   return {
     ...testimonio,
-    tipo: testimonio.tipoProyecto,
+    tipo: getCategoriaNombre(testimonio.tipoProyecto),
+    tipoProyectoNombre: getCategoriaNombre(testimonio.tipoProyecto),
     foto,
   };
 }
