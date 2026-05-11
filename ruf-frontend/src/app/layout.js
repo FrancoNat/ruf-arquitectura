@@ -1,6 +1,15 @@
+import { Montserrat } from "next/font/google";
 import Footer from "@/components/Footer";
 import { NotificationProvider } from "@/components/ui/NotificationProvider";
 import "./globals.css";
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-primary",
+  display: "swap",
+  fallback: ["Inter", "system-ui", "sans-serif"],
+});
 
 export const metadata = {
   metadataBase: new URL("https://rufarquitectura.com"),
@@ -38,7 +47,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="es" className="h-full antialiased">
+    <html lang="es" className={`${montserrat.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <NotificationProvider>
           {children}

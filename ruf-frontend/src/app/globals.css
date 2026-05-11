@@ -5,8 +5,7 @@
   --foreground: #2b2b2b;
   --primary: #4b3a33;
   --soft: #eaeaea;
-  --app-font-sans:
-    "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --app-font-sans: var(--font-primary), Montserrat, Inter, system-ui, sans-serif;
   --app-font-mono:
     "SFMono-Regular", "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
 }
@@ -25,10 +24,21 @@ html {
   --font-mono: var(--app-font-mono);
 }
 
+* {
+  font-family: var(--app-font-sans);
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--app-font-sans);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
 }
 
 .ruf-swiper {
