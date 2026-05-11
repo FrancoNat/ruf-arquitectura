@@ -6,16 +6,15 @@ const preguntas = [
     pregunta: "¿qué servicio elijo?",
     respuesta: [
       "cada servicio está pensado para distintos tipos de necesidades y espacios. Podés elegir según lo que necesites resolver: un ambiente específico, un espacio integrado o una consulta puntual para tomar decisiones.",
-      "si no estás seguro de cuál se adapta mejor a tu proyecto, podés escribirnos antes de realizar la compra y te ayudamos a definir la mejor opción.",
     ],
   },
   {
     pregunta:
-      "¿cuál es el próximo paso luego de realizar la compra de un pack de asesorías online?",
+      "¿cómo es el proceso de trabajo?",
     respuesta: [
-      "una vez realizada la compra nos vamos a poner en contacto para coordinar la primera instancia del servicio.",
-      "vamos a solicitarte previamente fotos del espacio, medidas y una breve descripción de lo que querés trabajar para poder aprovechar al máximo la reunión inicial.",
-      "a partir de ahí, iniciamos el proceso según el servicio elegido.",
+      "una vez que nos contactes coordinamos una primera instancia para conocer el proyecto, entender tus necesidades y evaluar el alcance del trabajo.",
+      "según el tipo de proyecto, podemos solicitar previamente fotos, medidas, planos o una breve descripción del espacio para aprovechar al máximo la reunión inicial.",
+      "a partir de ahí, armamos una propuesta personalizada y comenzamos el proceso de diseño.",
     ],
   },
   {
@@ -27,7 +26,7 @@ const preguntas = [
   {
     pregunta: "¿puedo solicitar una visita para la toma de medidas?",
     respuesta: [
-      "sí, ofrecemos visitas presenciales para la toma de medidas. Este servicio tiene un costo adicional y está sujeto a disponibilidad y zonas de alcance del estudio.",
+      "sí, ofrecemos visitas presenciales para la toma de medidas. Este servicio está sujeto a disponibilidad y zonas de alcance del estudio.",
     ],
   },
   {
