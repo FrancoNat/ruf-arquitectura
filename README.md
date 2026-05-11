@@ -5,7 +5,7 @@ Sitio web corporativo premium para un estudio de arquitectura y diseño de inter
 ## Preview
 
 ```text
-[(https://ruf-arquitectura.vercel.app/)]
+https://ruf-arquitectura.vercel.app/
 ```
 
 ## Sobre El Proyecto
@@ -17,11 +17,12 @@ Incluye:
 - Landing page corporativa responsive.
 - Galería pública de proyectos.
 - Detalle individual de proyectos.
+- Página de servicios de arquitectura.
 - Testimonios dinámicos.
 - Agenda pública con disponibilidad real.
 - Panel administrativo protegido con JWT.
 - Gestión de proyectos, testimonios, agenda, categorías y colaboradores.
-- Subida de imágenes reales a Cloudinary.
+- Subida de imágenes reales a Cloudinary con optimización automática.
 - API backend con PostgreSQL y Entity Framework Core.
 
 ## Stack Tecnológico
@@ -61,6 +62,8 @@ Incluye:
 - Portfolio visual de proyectos.
 - Filtros por categoría.
 - Página de detalle de proyecto.
+- Bloque editable por proyecto de “¿qué incluye?”.
+- Página `/arquitectura` con servicios, alcance y llamada a contacto.
 - Testimonios de clientes.
 - Agenda pública con horarios disponibles.
 - Diseño responsive completo.
@@ -70,12 +73,15 @@ Incluye:
 
 - Login real con JWT.
 - Gestión de proyectos.
+- Gestión editable del bloque “¿qué incluye?” por proyecto.
 - Gestión de testimonios.
 - Gestión de agenda.
 - Gestión de categorías.
 - Gestión de colaboradores.
 - Roles básicos: `admin` y `colaborador`.
 - Upload protegido de imágenes a Cloudinary.
+- Selección múltiple de imágenes para proyectos.
+- Optimización automática de JPG/PNG antes de subir para evitar rechazos por peso o dimensiones.
 - URLs de imágenes guardadas en PostgreSQL.
 
 ### Backend API
@@ -86,8 +92,8 @@ Incluye:
 - Autenticación JWT.
 - Endpoints públicos y protegidos.
 - Upload `multipart/form-data`.
-- Validación de tipo de archivo.
-- Límite de tamaño de imagen de 10MB.
+- Integración server-side con Cloudinary.
+- Migraciones para proyectos, imágenes, categorías, agenda, usuarios, testimonios y etapas incluidas por proyecto.
 - Swagger en entorno de desarrollo.
 
 ## Arquitectura Del Proyecto
@@ -132,6 +138,26 @@ Jwt:Key
 ```
 
 En producción deben configurarse como variables de entorno o secretos del proveedor de deploy.
+
+En Render se pueden usar las variables con doble guion bajo:
+
+```text
+Cloudinary__CloudName
+Cloudinary__ApiKey
+Cloudinary__ApiSecret
+Jwt__Key
+ConnectionStrings__DefaultConnection
+```
+
+El backend también reconoce estas variables de Cloudinary:
+
+```text
+CLOUDINARY_CLOUD_NAME
+CLOUDINARY_API_KEY
+CLOUDINARY_API_SECRET
+```
+
+Importante: `ApiKey` y `ApiSecret` deben pertenecer a la misma fila/cuenta en Cloudinary. Si se mezclan, Cloudinary responde `Invalid Signature` al subir imágenes.
 
 Nunca se deben commitear:
 
@@ -196,6 +222,15 @@ Aplicar migraciones:
 dotnet ef database update --project ruf-backend/RufApi --startup-project ruf-backend/RufApi
 ```
 
+Aplicar migraciones contra producción usando una conexión externa:
+
+```bash
+RUF_DB_CONNECTION='Host=HOST;Port=5432;Database=DB;Username=USER;Password=PASSWORD;SSL Mode=Require;Trust Server Certificate=true' \
+dotnet ef database update \
+  --project ruf-backend/RufApi \
+  --startup-project ruf-backend/RufApi
+```
+
 ### Frontend
 
 ```bash
@@ -230,6 +265,7 @@ Para producción:
 - Configurar connection string del backend.
 - Configurar `Jwt:Key` seguro.
 - Configurar credenciales de Cloudinary.
+- Verificar que `Cloudinary__ApiKey` y `Cloudinary__ApiSecret` sean pareja.
 - Habilitar CORS para el dominio real del frontend.
 
 ## Estado Actual
@@ -238,6 +274,7 @@ Para producción:
 - Admin conectado a API real.
 - PostgreSQL como persistencia principal.
 - Cloudinary integrado para uploads.
+- Optimización automática de imágenes en el frontend antes de subir.
 - Auth real con JWT.
 - User secrets configurado para desarrollo local.
 
