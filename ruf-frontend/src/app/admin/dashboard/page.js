@@ -117,7 +117,7 @@ export default function AdminDashboardPage() {
 
         <AdminCard
           titulo="volver al sitio"
-          descripcion="sal del panel y revisa el frontend publico de rüf arquitectura."
+          descripcion="sal del panel de administrador y volvé al sitio."
           className="min-w-0 p-3 sm:p-5"
         >
           <Link
