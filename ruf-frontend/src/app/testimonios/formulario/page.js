@@ -25,8 +25,7 @@ export default function TestimonioFormularioPage() {
             </div>
 
             <p className="max-w-3xl text-lg leading-relaxed text-text/75 sm:text-xl">
-              queremos conocer cómo fue tu experiencia con rüf. Tu testimonio
-              queda guardado para revisión antes de aparecer en el sitio.
+              queremos conocer cómo fue tu experiencia con rüf.
             </p>
           </section>
 
