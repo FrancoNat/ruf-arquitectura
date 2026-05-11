@@ -85,6 +85,13 @@ export default function Navbar({ alwaysVisible = false }) {
               quiénes somos
             </Link>
             <Link
+              href="/preguntas-frecuentes"
+              onClick={cerrarMenu}
+              className="hover:text-white transition"
+            >
+              preguntas frecuentes
+            </Link>
+            <Link
               href="/agenda"
               onClick={cerrarMenu}
               className="mt-2 rounded-lg border border-white/30 px-3 py-2 text-center text-white transition hover:bg-white hover:text-black"
@@ -122,6 +129,12 @@ export default function Navbar({ alwaysVisible = false }) {
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-white/80 md:w-auto md:justify-end md:gap-6">
             <Link href="/quienes-somos" className="hover:text-white transition">
               quiénes somos
+            </Link>
+            <Link
+              href="/preguntas-frecuentes"
+              className="hover:text-white transition"
+            >
+              preguntas frecuentes
             </Link>
 
             <Link

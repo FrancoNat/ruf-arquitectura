@@ -47,7 +47,7 @@ export default function QuienesSomosPage() {
           <div className="mx-auto max-w-4xl space-y-6 text-center">
             <p className="text-lg leading-relaxed text-text">
               <strong>
-                somos camila y trinidad, arquitectas detrás de rüf.
+                somos trinidad y camila, arquitectas detrás de rüf.
               </strong>
             </p>
 
