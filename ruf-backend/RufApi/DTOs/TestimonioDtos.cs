@@ -9,3 +9,10 @@ public sealed record TestimonioRequest(
     string Estado,
     bool MostrarEnHome
 );
+
+public sealed record TestimonioPublicRequest(
+    string Nombre,
+    string TipoProyecto,
+    string Texto,
+    int Estrellas
+);

@@ -56,6 +56,21 @@ export async function createTestimonio(data) {
   });
 }
 
+export async function createPublicTestimonio(data) {
+  return apiFetch("/api/testimonios/solicitudes", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      nombre: data.nombre,
+      tipoProyecto: data.tipoProyecto,
+      texto: data.texto,
+      estrellas: Number(data.estrellas),
+    }),
+  });
+}
+
 export async function updateTestimonio(id, data) {
   return apiFetch(`/api/testimonios/${encodeURIComponent(id)}`, {
     method: "PUT",

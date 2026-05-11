@@ -72,8 +72,8 @@ export default function TestimonioAdminCard({
           {updating
             ? "actualizando..."
             : testimonio.estado === "activo"
-              ? "desactivar"
-              : "activar"}
+              ? "ocultar"
+              : "mostrar"}
         </button>
 
         <button

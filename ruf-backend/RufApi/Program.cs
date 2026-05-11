@@ -600,6 +600,42 @@ testimonios.MapGet("/{id}", async (RufDbContext db, string id) =>
     return testimonio is null ? Results.NotFound() : Results.Ok(MapTestimonioResponse(testimonio));
 });
 
+testimonios.MapPost("/solicitudes", async (RufDbContext db, TestimonioPublicRequest request) =>
+{
+    var validationError = ValidateTestimonioPublicRequest(request);
+    if (validationError is not null)
+    {
+        return Results.BadRequest(new { error = validationError });
+    }
+
+    var nombre = request.Nombre.Trim();
+    var tipoProyecto = request.TipoProyecto.Trim();
+    var texto = request.Texto.Trim();
+    var id = await EnsureUniqueTestimonioIdAsync(
+        db,
+        InMemoryDatabase.Slugify(nombre));
+    var now = DateTime.UtcNow;
+
+    var testimonio = new Testimonio
+    {
+        Id = id,
+        Nombre = nombre,
+        TipoProyecto = tipoProyecto,
+        Texto = texto,
+        Estrellas = request.Estrellas,
+        Foto = "/images/logos/ruf-full-marron.png",
+        Estado = "inactivo",
+        MostrarEnHome = false,
+        CreatedAt = now,
+        UpdatedAt = now
+    };
+
+    db.Testimonios.Add(testimonio);
+    await db.SaveChangesAsync();
+
+    return Results.Created($"/api/testimonios/{testimonio.Id}", MapTestimonioResponse(testimonio));
+});
+
 testimonios.MapPost("/", async (RufDbContext db, TestimonioRequest request) =>
 {
     var validationError = ValidateTestimonioRequest(request);
@@ -1374,6 +1410,21 @@ static TestimonioResponse MapTestimonioResponse(Testimonio testimonio)
 
 static string? ValidateTestimonioRequest(TestimonioRequest request)
 {
+    if (string.IsNullOrWhiteSpace(request.Nombre))
+    {
+        return "El nombre es obligatorio.";
+    }
+
+    if (string.IsNullOrWhiteSpace(request.TipoProyecto))
+    {
+        return "El tipo de proyecto es obligatorio.";
+    }
+
+    if (string.IsNullOrWhiteSpace(request.Texto))
+    {
+        return "El testimonio es obligatorio.";
+    }
+
     if (request.Estrellas is < 1 or > 5)
     {
         return "Las estrellas deben estar entre 1 y 5.";
@@ -1383,6 +1434,36 @@ static string? ValidateTestimonioRequest(TestimonioRequest request)
     if (!estadosValidos.Contains(request.Estado, StringComparer.OrdinalIgnoreCase))
     {
         return "El estado debe ser activo o inactivo.";
+    }
+
+    return null;
+}
+
+static string? ValidateTestimonioPublicRequest(TestimonioPublicRequest request)
+{
+    if (string.IsNullOrWhiteSpace(request.Nombre))
+    {
+        return "El nombre es obligatorio.";
+    }
+
+    if (string.IsNullOrWhiteSpace(request.TipoProyecto))
+    {
+        return "El tipo de proyecto es obligatorio.";
+    }
+
+    if (string.IsNullOrWhiteSpace(request.Texto))
+    {
+        return "El testimonio es obligatorio.";
+    }
+
+    if (request.Texto.Length > 1000)
+    {
+        return "El testimonio no puede superar los 1000 caracteres.";
+    }
+
+    if (request.Estrellas is < 1 or > 5)
+    {
+        return "Las estrellas deben estar entre 1 y 5.";
     }
 
     return null;

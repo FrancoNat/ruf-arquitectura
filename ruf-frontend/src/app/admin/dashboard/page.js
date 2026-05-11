@@ -3,6 +3,7 @@ import AdminCard from "@/components/admin/AdminCard";
 import CategoriaManager from "@/components/admin/CategoriaManager";
 import DashboardStats from "@/components/admin/DashboardStats";
 import AdminLayout from "@/components/admin/AdminLayout";
+import TestimonioShareActions from "@/components/admin/TestimonioShareActions";
 
 const primaryActionClass =
   "inline-flex w-fit rounded-full bg-primary px-3 py-2 text-xs text-white transition hover:opacity-85 sm:rounded-xl sm:px-4 sm:py-3 sm:text-sm";
@@ -78,6 +79,14 @@ export default function AdminDashboardPage() {
           >
             abrir testimonios
           </Link>
+        </AdminCard>
+
+        <AdminCard
+          titulo="formulario de testimonios"
+          descripcion="abrí el formulario privado para compartirlo con clientes."
+          className="min-w-0 p-3 sm:p-5"
+        >
+          <TestimonioShareActions primaryActionClass={primaryActionClass} />
         </AdminCard>
 
         <AdminCard

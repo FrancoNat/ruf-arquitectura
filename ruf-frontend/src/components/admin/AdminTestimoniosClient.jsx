@@ -48,13 +48,15 @@ export default function AdminTestimoniosClient() {
       return;
     }
 
-    const estado = testimonio.estado === "activo" ? "inactivo" : "activo";
+    const publicar = testimonio.estado !== "activo";
+    const estado = publicar ? "activo" : "inactivo";
     setUpdatingId(id);
 
     try {
       const actualizado = await updateTestimonio(id, {
         ...testimonio,
         estado,
+        mostrarEnHome: publicar,
       });
 
       setTestimonios((prev) =>
