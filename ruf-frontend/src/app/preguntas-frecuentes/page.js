@@ -71,7 +71,7 @@ export default function PreguntasFrecuentesPage() {
           <section className="mt-14 rounded-2xl border border-black/5 bg-white p-5 shadow-sm sm:p-6 lg:p-8">
             <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
               <div>
-                <h2 className="text-2xl text-primary">faq</h2>
+            
                 <p className="mt-4 text-sm leading-relaxed text-text/60">
                   si tu duda no aparece acá, podés escribirnos y vemos juntas
                   cuál es el mejor camino para tu espacio.
