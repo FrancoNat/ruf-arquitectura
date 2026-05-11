@@ -281,51 +281,13 @@ uploads.MapPost("/image", async (HttpRequest request, IConfiguration configurati
         return Results.BadRequest(new { error = "no se recibió ningún archivo" });
     }
 
-    var settings = GetCloudinarySettings(configuration);
-    if (!settings.IsConfigured)
+    var upload = await UploadCloudinaryImageAsync(file, configuration, logger, "ruf-arquitectura");
+    if (upload.Error is not null)
     {
-        logger.LogError("Cloudinary no está configurado");
-        return Results.Problem("cloudinary no está configurado", statusCode: StatusCodes.Status500InternalServerError);
+        return upload.Error;
     }
 
-    var cloudinary = new Cloudinary(new Account(
-        settings.CloudName,
-        settings.ApiKey,
-        settings.ApiSecret));
-    await using var stream = file.OpenReadStream();
-    var uploadParams = new ImageUploadParams
-    {
-        File = new FileDescription(file.FileName, stream),
-        Folder = "ruf-arquitectura",
-        UseFilename = true,
-        UniqueFilename = true,
-        Overwrite = false
-    };
-
-    try
-    {
-        var result = await cloudinary.UploadAsync(uploadParams);
-        if (result.Error is not null)
-        {
-            logger.LogError("error cloudinary: {Message}", result.Error.Message);
-            return Results.BadRequest(new
-            {
-                error = "cloudinary rechazó la imagen. Revisá el tamaño máximo permitido por el plan de Cloudinary.",
-                detail = result.Error.Message
-            });
-        }
-
-        return Results.Ok(new UploadImageResponse(result.SecureUrl.ToString(), result.PublicId));
-    }
-    catch (Exception ex)
-    {
-        logger.LogError(ex, "falló la subida a cloudinary");
-        return Results.BadRequest(new
-        {
-            error = "no pudimos subir la imagen. Subí una imagen JPG o PNG.",
-            detail = ex.Message
-        });
-    }
+    return Results.Ok(new UploadImageResponse(upload.Url, upload.PublicId));
 })
 .DisableAntiforgery();
 
@@ -600,17 +562,47 @@ testimonios.MapGet("/{id}", async (RufDbContext db, string id) =>
     return testimonio is null ? Results.NotFound() : Results.Ok(MapTestimonioResponse(testimonio));
 });
 
-testimonios.MapPost("/solicitudes", async (RufDbContext db, TestimonioPublicRequest request) =>
+testimonios.MapPost("/solicitudes", async (HttpRequest request, RufDbContext db, IConfiguration configuration, ILogger<Program> logger) =>
 {
-    var validationError = ValidateTestimonioPublicRequest(request);
+    if (!request.HasFormContentType)
+    {
+        return Results.BadRequest(new { error = "la solicitud debe ser multipart/form-data" });
+    }
+
+    var form = await request.ReadFormAsync();
+    var nombre = form["nombre"].ToString().Trim();
+    var tipoProyecto = form["tipoProyecto"].ToString().Trim();
+    var texto = form["texto"].ToString().Trim();
+    var estrellasRaw = form["estrellas"].ToString();
+    var estrellas = int.TryParse(estrellasRaw, out var parsedEstrellas)
+        ? parsedEstrellas
+        : 0;
+    var fotoFile = form.Files.GetFile("foto");
+    var publicRequest = new TestimonioPublicRequest(nombre, tipoProyecto, texto, estrellas);
+    var validationError = ValidateTestimonioPublicRequest(publicRequest);
+
     if (validationError is not null)
     {
         return Results.BadRequest(new { error = validationError });
     }
 
-    var nombre = request.Nombre.Trim();
-    var tipoProyecto = request.TipoProyecto.Trim();
-    var texto = request.Texto.Trim();
+    var fotoUrl = string.Empty;
+    if (fotoFile is not null && fotoFile.Length > 0)
+    {
+        var upload = await UploadCloudinaryImageAsync(
+            fotoFile,
+            configuration,
+            logger,
+            "ruf-arquitectura/testimonios");
+
+        if (upload.Error is not null)
+        {
+            return upload.Error;
+        }
+
+        fotoUrl = upload.Url;
+    }
+
     var id = await EnsureUniqueTestimonioIdAsync(
         db,
         InMemoryDatabase.Slugify(nombre));
@@ -622,8 +614,8 @@ testimonios.MapPost("/solicitudes", async (RufDbContext db, TestimonioPublicRequ
         Nombre = nombre,
         TipoProyecto = tipoProyecto,
         Texto = texto,
-        Estrellas = request.Estrellas,
-        Foto = "/images/logos/ruf-full-marron.png",
+        Estrellas = estrellas,
+        Foto = fotoUrl,
         Estado = "inactivo",
         MostrarEnHome = false,
         CreatedAt = now,
@@ -1060,6 +1052,71 @@ static CloudinarySettings GetCloudinarySettings(IConfiguration configuration)
         cloudName.Trim(),
         apiKey.Trim(),
         apiSecret.Trim());
+}
+
+static async Task<CloudinaryUploadResult> UploadCloudinaryImageAsync(
+    IFormFile file,
+    IConfiguration configuration,
+    ILogger logger,
+    string folder)
+{
+    var settings = GetCloudinarySettings(configuration);
+    if (!settings.IsConfigured)
+    {
+        logger.LogError("Cloudinary no está configurado");
+        return new CloudinaryUploadResult(
+            string.Empty,
+            string.Empty,
+            Results.Problem("cloudinary no está configurado", statusCode: StatusCodes.Status500InternalServerError));
+    }
+
+    var cloudinary = new Cloudinary(new Account(
+        settings.CloudName,
+        settings.ApiKey,
+        settings.ApiSecret));
+    await using var stream = file.OpenReadStream();
+    var uploadParams = new ImageUploadParams
+    {
+        File = new FileDescription(file.FileName, stream),
+        Folder = folder,
+        UseFilename = true,
+        UniqueFilename = true,
+        Overwrite = false
+    };
+
+    try
+    {
+        var result = await cloudinary.UploadAsync(uploadParams);
+        if (result.Error is not null)
+        {
+            logger.LogError("error cloudinary: {Message}", result.Error.Message);
+            return new CloudinaryUploadResult(
+                string.Empty,
+                string.Empty,
+                Results.BadRequest(new
+                {
+                    error = "cloudinary rechazó la imagen. Revisá el tamaño máximo permitido por el plan de Cloudinary.",
+                    detail = result.Error.Message
+                }));
+        }
+
+        return new CloudinaryUploadResult(
+            result.SecureUrl.ToString(),
+            result.PublicId,
+            null);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "falló la subida a cloudinary");
+        return new CloudinaryUploadResult(
+            string.Empty,
+            string.Empty,
+            Results.BadRequest(new
+            {
+                error = "no pudimos subir la imagen. Subí una imagen JPG o PNG.",
+                detail = ex.Message
+            }));
+    }
 }
 
 static ReunionResponse MapReunionResponse(Reunion reunion)
@@ -1768,6 +1825,11 @@ public sealed record LoginResponse(
 public sealed record UploadImageResponse(
     string Url,
     string PublicId);
+
+public sealed record CloudinaryUploadResult(
+    string Url,
+    string PublicId,
+    IResult? Error);
 
 public sealed record CloudinarySettings(
     string CloudName,

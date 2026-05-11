@@ -13,13 +13,19 @@ export default function TestimonioAdminCard({
   return (
     <article className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
       <div className="flex items-start gap-4">
-        <Image
-          src={testimonio.foto}
-          alt={testimonio.nombre}
-          width={56}
-          height={56}
-          className="h-14 w-14 rounded-full object-cover"
-        />
+        {testimonio.foto ? (
+          <Image
+            src={testimonio.foto}
+            alt={testimonio.nombre}
+            width={56}
+            height={56}
+            className="h-14 w-14 rounded-full object-cover"
+          />
+        ) : (
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-background text-lg font-medium text-primary">
+            {getInicial(testimonio.nombre)}
+          </div>
+        )}
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -87,4 +93,8 @@ export default function TestimonioAdminCard({
       </div>
     </article>
   );
+}
+
+function getInicial(nombre) {
+  return nombre?.trim()?.[0]?.toUpperCase() || "R";
 }

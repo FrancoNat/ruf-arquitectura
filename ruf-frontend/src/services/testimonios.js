@@ -7,11 +7,22 @@ const fotosFallback = {
 };
 
 function mapTestimonio(testimonio) {
+  const fotoFallback = fotosFallback[testimonio.id];
+  const foto = fotoFallback || normalizeFoto(testimonio.foto);
+
   return {
     ...testimonio,
     tipo: testimonio.tipoProyecto,
-    foto: fotosFallback[testimonio.id] || testimonio.foto,
+    foto,
   };
+}
+
+function normalizeFoto(foto) {
+  if (!foto || foto === "/images/logos/ruf-full-marron.png") {
+    return "";
+  }
+
+  return foto;
 }
 
 export async function getTestimoniosHome() {
@@ -46,28 +57,20 @@ export async function getAdminTestimonioById(id) {
   return mapTestimonio(testimonio);
 }
 
-export async function createTestimonio(data) {
-  return apiFetch("/api/testimonios", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(normalizeTestimonioPayload(data)),
-  });
-}
-
 export async function createPublicTestimonio(data) {
+  const body = new FormData();
+  body.append("nombre", data.nombre);
+  body.append("tipoProyecto", data.tipoProyecto);
+  body.append("texto", data.texto);
+  body.append("estrellas", String(Number(data.estrellas)));
+
+  if (data.foto) {
+    body.append("foto", data.foto, data.foto.name || "testimonio.jpg");
+  }
+
   return apiFetch("/api/testimonios/solicitudes", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      nombre: data.nombre,
-      tipoProyecto: data.tipoProyecto,
-      texto: data.texto,
-      estrellas: Number(data.estrellas),
-    }),
+    body,
   });
 }
 
